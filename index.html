@@ -45,6 +45,7 @@ h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.01em}
 .stats b{color:var(--ink)}
 
 .stage{position:relative;width:100%;height:clamp(360px,74vh,860px);min-height:320px;margin-top:8px;border-radius:14px;overflow:hidden;border:1px solid var(--rule);background:radial-gradient(ellipse at 50% 40%,rgba(60,90,130,.35),rgba(8,13,22,.6) 80%)}
+.stage.fail{border-color:var(--bad);box-shadow:0 0 0 3px var(--bad),inset 0 0 70px rgba(255,70,70,.30)}
 #gl{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 #gl:active{cursor:grabbing}
 #gl:focus-visible{outline-offset:-3px}
@@ -458,6 +459,7 @@ const xray=(hex,base,rim)=>new THREE.ShaderMaterial({
 const MAT = {
   idle: xray("#A9C8F0",0.10,0.60),
   found: xray("#4DE39A",0.34,0.95),
+  red: xray("#FF4B4B",0.40,1.0),
   active: new THREE.ShaderMaterial({
     vertexShader:"const float uPush=0.0;\n"+VERT,
     fragmentShader:`varying vec3 vN; varying vec3 vV;
@@ -472,10 +474,14 @@ const activeBlue=new THREE.ShaderMaterial({
 const MATN = {
   idle: new THREE.MeshStandardMaterial({color:"#E8DCC3",roughness:0.72,metalness:0.02,side:THREE.DoubleSide}),
   found: new THREE.MeshStandardMaterial({color:"#3FC57C",roughness:0.55,metalness:0.02,emissive:"#0A3A20",side:THREE.DoubleSide}),
-  active: activeBlue
+  active: activeBlue,
+  red: new THREE.MeshStandardMaterial({color:"#E03030",roughness:0.55,metalness:0.02,emissive:"#5A0A0A",side:THREE.DoubleSide})
 };
 const GHOST=new THREE.ShaderMaterial({ vertexShader:"const float uPush=0.0;\n"+VERT,
   fragmentShader:"varying vec3 vN; varying vec3 vV; void main(){ gl_FragColor=vec4(0.12,0.46,1.0,0.38); }",
+  transparent:true, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide });
+const GHOSTR=new THREE.ShaderMaterial({ vertexShader:"const float uPush=0.0;\n"+VERT,
+  fragmentShader:"varying vec3 vN; varying vec3 vV; void main(){ gl_FragColor=vec4(1.0,0.2,0.2,0.55); }",
   transparent:true, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide });
 const glowMat=(push)=>{ const m=new THREE.ShaderMaterial({
   uniforms:{uK:{value:1.0},uC:{value:new THREE.Color(1,1,1)}},
@@ -525,7 +531,7 @@ function setRegion(r){
   controls.update(); anim=null; dirty=true; return true;
 }
 function applyStates(){
-  const rank={idle:0,found:1,active:2}; const best=new Map();
+  const rank={idle:0,found:1,active:2,red:3}; const best=new Map();
   for(const m of new Set(state.meshes.values())) best.set(m,"idle");
   for(const [id,st] of state.states){ for(const m of meshesOf(id)){ if(rank[st]>rank[best.get(m)]) best.set(m,st); } }
   const MS=state.view==="normal"?MATN:MAT;
@@ -539,6 +545,8 @@ function applyStates(){
     for(const m of ms){ const gm=glowMat(push/(m.scale.x||1)); gm.uniforms.uK=uK; if(state.view==="normal") gm.uniforms.uC.value.setRGB(0.12,0.46,1.0); const g=new THREE.Mesh(m.geometry,gm); g.frustumCulled=false; g.renderOrder=5; m.add(g); state.glow.push(g);
       if(state.view==="normal"){ const gh=new THREE.Mesh(m.geometry,GHOST); gh.frustumCulled=false; gh.renderOrder=6; m.add(gh); state.glow.push(gh); } }
   }
+  /* os fautif visible en rouge même derrière d'autres os (vue Normale) */
+  if(state.redId && state.view==="normal"){ for(const m of meshesOf(state.redId)){ const gr=new THREE.Mesh(m.geometry,GHOSTR); gr.frustumCulled=false; gr.renderOrder=6; m.add(gr); state.glow.push(gr); } }
   dirty=true;
 }
 function groupSphere(ms){
@@ -571,7 +579,7 @@ function setActive(id){
   applyStates(); if(state.auto) focusActive(false);
 }
 function setFound(id){ state.states.set(id,"found"); if(state.activeId===id) state.activeId=null; applyStates(); }
-function resetStates(){ state.states.clear(); state.activeId=null; applyStates(); }
+function resetStates(){ state.states.clear(); state.activeId=null; state.fail=false; state.redId=null; stage.classList.remove("fail"); applyStates(); }
 
 let lastT=performance.now();
 function frame(now){
@@ -710,9 +718,18 @@ function startLevel(n){
   $("play").hidden=false; $("end").hidden=true;
   updateSide(); show();
 }
+/* réponse incorrecte : l'os à trouver passe au rouge (cadre rouge autour de la vue), puis l'écran « niveau à recommencer » apparaît */
 function failLevel(reason){
-  S.locked=true; const b=S.queue[S.i];
-  state.activeId=null; for(const [k,v] of state.states) if(v==="active") state.states.set(k,"idle"); applyStates();
+  S.locked=true; const run=S, b=S.queue[S.i];
+  inp.readOnly=true; $("btnHint").disabled=true; $("btnPass").disabled=true; $("hint").textContent="";
+  fb("bad",reason);
+  state.fail=true; stage.classList.add("fail");
+  state.activeId=null; for(const [k,v] of state.states) if(v==="active") state.states.set(k,"idle");
+  state.states.set(b.id,"red"); state.redId=b.id; /* seul l'os à trouver passe au rouge */
+  applyStates();
+  setTimeout(()=>{ if(S===run) showFail(reason,b); },1800);
+}
+function showFail(reason,b){
   $("play").hidden=true; const E=$("end"); E.hidden=false;
   E.innerHTML=`<h2>Niveau ${S.level} à recommencer</h2>
     <p style="color:var(--bad);font-size:1.1rem">${reason}</p>
