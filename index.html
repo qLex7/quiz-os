@@ -175,7 +175,7 @@ footer p{margin:.4em 0}
       <summary>Comment jouer</summary>
       <ul>
         <li>Deux vues : « Rayons X » (os translucides, comme un scanner) et « Normale » (os pleins, éclairés). Le choix est gardé.</li>
-        <li>À chaque bonne réponse, la vue glisse vers la gauche et la zone suivante arrive de la droite (bouton « Glissement » pour l’activer ou le couper ; coupé par défaut si ton système demande de réduire les animations). La liste « Os trouvés » garde ton historique.</li>
+        <li>À chaque bonne réponse, la vue glisse vers la gauche et la zone suivante arrive de la droite (le bouton « Glissement » permet de le couper ; il est actif à chaque lancement). La liste « Os trouvés » garde ton historique.</li>
         <li>L’os lumineux est à nommer : en blanc en vue Rayons X, en bleu en vue Normale. Fais tourner le squelette pour le voir sous tous les angles, puis tape son nom au clavier (physique ou à l’écran) et Entrée.</li>
         <li>Seule la zone du corps concernée est affichée (crâne, colonne, thorax, bras, main, bassin, jambe, pied). Elle tourne lentement sur elle-même ; touche-la pour la faire tourner toi-même, ou coupe la rotation avec « Rotation auto ».</li>
         <li>Les 206 os du corps humain sont à retrouver, sous 120 noms : un os pair (pariétal, côte, fémur…) n’a qu’un nom. Il s’allume des deux côtés pour le crâne, le thorax et le bassin, et du côté droit pour les membres.</li>
@@ -366,7 +366,7 @@ BONES.forEach(b=>{ b.nAns=b.ans.map(norm); b.nOld=(b.old||[]).map(norm); b.nName
 const $=id=>document.getElementById(id);
 const reduce = matchMedia("(prefers-reduced-motion: reduce)");
 const canvas=$("gl"), stage=$("stage");
-const state = { slide:(()=>{ try{ const v=localStorage.getItem("quiz-os-slide"); if(v!==null) return v==="1"; }catch(e){} return !reduce.matches; })(), view:(()=>{ try{ return localStorage.getItem("quiz-os-view")==="normal"?"normal":"xray"; }catch(e){ return "xray"; } })(), states:new Map(), meshes:new Map(), groups:{}, regionSets:{}, spheres:{}, region:null, ready:false, auto:true, rot:!reduce.matches, activeId:null, glow:[] };
+const state = { slide:true, view:(()=>{ try{ return localStorage.getItem("quiz-os-view")==="normal"?"normal":"xray"; }catch(e){ return "xray"; } })(), states:new Map(), meshes:new Map(), groups:{}, regionSets:{}, spheres:{}, region:null, ready:false, auto:true, rot:true, activeId:null, glow:[] };
 const REGION_LABEL = {osselets:"Osselets de l’oreille droite (marteau, enclume, étrier)",crane:"Crâne et os hyoïde",rachis:"Colonne vertébrale",thorax:"Thorax et ceinture scapulaire",bras:"Membre supérieur droit (bras et avant-bras)",main:"Main droite",bassin:"Bassin",jambe:"Membre inférieur droit (cuisse et jambe)",pied:"Pied droit"};
 
 let renderer;
@@ -541,7 +541,7 @@ if(controls){
   controls.addEventListener("start",()=>{ anim=null; clearTimeout(rotTimer); controls.autoRotate=false; });
   controls.addEventListener("end",()=>{ clearTimeout(rotTimer); rotTimer=setTimeout(syncRot,3500); });
 }
-reduce.addEventListener("change",()=>{ if(controls) controls.enableDamping=!reduce.matches; if(reduce.matches) state.rot=false; syncRot(); });  /* mouvement réduit : rotation coupée par défaut, mais le joueur peut l'activer lui-même */
+reduce.addEventListener("change",()=>{ if(controls) controls.enableDamping=!reduce.matches; syncRot(); });  /* mouvement réduit : rotation coupée par défaut, mais le joueur peut l'activer lui-même */
 $("btnRot").addEventListener("click",()=>{ state.rot=!state.rot; syncRot(); });
 syncRot();
 
@@ -568,7 +568,7 @@ function setView(v){
 $("vXray").addEventListener("click",()=>setView("xray"));
 $("vNorm").addEventListener("click",()=>setView("normal"));
 setView(state.view);
-function syncSlide(){ $("btnSlide").setAttribute("aria-pressed",state.slide); try{ localStorage.setItem("quiz-os-slide",state.slide?"1":"0"); }catch(e){} }
+function syncSlide(){ $("btnSlide").setAttribute("aria-pressed",state.slide); }
 $("btnSlide").addEventListener("click",()=>{ state.slide=!state.slide; syncSlide(); });
 syncSlide();
 $("btnAuto").addEventListener("click",e=>{ state.auto=!state.auto; e.currentTarget.setAttribute("aria-pressed",state.auto); if(state.auto) focusActive(false); });
