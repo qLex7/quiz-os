@@ -1,0 +1,298 @@
+{
+ "frontal": [
+  "FMA52734"
+ ],
+ "parietal": [
+  "FMA52788",
+  "FMA52789"
+ ],
+ "temporal": [
+  "FMA52738",
+  "FMA52739"
+ ],
+ "nasal": [
+  "FMA53647",
+  "FMA53648"
+ ],
+ "zygomatique": [
+  "FMA52892",
+  "FMA52893"
+ ],
+ "maxillaire": [
+  "FMA53649",
+  "FMA53650"
+ ],
+ "mandibule": [
+  "FMA52748"
+ ],
+ "cervicales": [
+  "FMA12519",
+  "FMA12520",
+  "FMA12521",
+  "FMA12522",
+  "FMA12523",
+  "FMA12524",
+  "FMA12525"
+ ],
+ "vthor": [
+  "FMA9165",
+  "FMA9187",
+  "FMA9209",
+  "FMA9248",
+  "FMA9922",
+  "FMA9945",
+  "FMA9968",
+  "FMA9991",
+  "FMA10014",
+  "FMA10037",
+  "FMA10059",
+  "FMA10081"
+ ],
+ "lombaires": [
+  "FMA13072",
+  "FMA13073",
+  "FMA13074",
+  "FMA13075",
+  "FMA13076"
+ ],
+ "sacrum": [
+  "FMA16202"
+ ],
+ "coccyx": [
+  "COCCYX"
+ ],
+ "clavicule": [
+  "FMA13322",
+  "FMA13323"
+ ],
+ "scapula": [
+  "FMA13395",
+  "FMA13396"
+ ],
+ "sternum": [
+  "FMA7486",
+  "FMA7487",
+  "FMA7488"
+ ],
+ "cotes": [
+  "FMA7857",
+  "FMA7882",
+  "FMA7909",
+  "FMA7957",
+  "FMA8066",
+  "FMA8175",
+  "FMA8229",
+  "FMA8283",
+  "FMA8364",
+  "FMA8445",
+  "FMA8531",
+  "FMA8533",
+  "FMA7987",
+  "FMA8012",
+  "FMA8039",
+  "FMA8148",
+  "FMA8093",
+  "FMA8202",
+  "FMA8256",
+  "FMA8310",
+  "FMA8391",
+  "FMA8472",
+  "FMA8532",
+  "FMA8534"
+ ],
+ "humerus": [
+  "FMA23130",
+  "FMA23131"
+ ],
+ "radius": [
+  "FMA23464",
+  "FMA23465"
+ ],
+ "ulna": [
+  "FMA23467",
+  "FMA23468"
+ ],
+ "carpe": [
+  "FMA24435",
+  "FMA24437",
+  "FMA24439",
+  "FMA24441",
+  "FMA24443",
+  "FMA23725",
+  "FMA24446",
+  "FMA24448",
+  "FMA24436",
+  "FMA24438",
+  "FMA24440",
+  "FMA24442",
+  "FMA24444",
+  "FMA24445",
+  "FMA24447",
+  "FMA24449"
+ ],
+ "metacarpiens": [
+  "FMA24464",
+  "FMA24466",
+  "FMA24468",
+  "FMA24470",
+  "FMA24472",
+  "FMA24465",
+  "FMA24467",
+  "FMA24469",
+  "FMA24471",
+  "FMA24473"
+ ],
+ "phalangesM": [
+  "FMA23938",
+  "FMA23940",
+  "FMA23942",
+  "FMA23944",
+  "FMA23951",
+  "FMA23953",
+  "FMA23955",
+  "FMA23957",
+  "FMA23959",
+  "FMA24450",
+  "FMA24451",
+  "FMA24452",
+  "FMA24453",
+  "FMA24454",
+  "FMA24455",
+  "FMA24456",
+  "FMA24457",
+  "FMA24458",
+  "FMA24459",
+  "FMA24460",
+  "FMA24461",
+  "FMA24462",
+  "FMA24463",
+  "FMA65470",
+  "FMA66791",
+  "FMA71908",
+  "FMA71915",
+  "FMA71916"
+ ],
+ "phalangesP": [
+  "FMA230986",
+  "FMA230988",
+  "FMA32634",
+  "FMA32635",
+  "FMA32636",
+  "FMA32637",
+  "FMA32638",
+  "FMA32639",
+  "FMA32640",
+  "FMA32641",
+  "FMA32642",
+  "FMA32643",
+  "FMA32644",
+  "FMA32645",
+  "FMA32646",
+  "FMA32647",
+  "FMA32650",
+  "FMA32651",
+  "FMA32652",
+  "FMA32653",
+  "FMA32654",
+  "FMA32655",
+  "FMA32656",
+  "FMA32657",
+  "FMA32658",
+  "FMA32659",
+  "FMA43253",
+  "FMA43254"
+ ],
+ "coxal": [
+  "FMA16586",
+  "FMA16587"
+ ],
+ "femur": [
+  "FMA24474",
+  "FMA24475"
+ ],
+ "patella": [
+  "FMA24486",
+  "FMA24487"
+ ],
+ "tibia": [
+  "FMA24477",
+  "FMA24478"
+ ],
+ "fibula": [
+  "FMA24480",
+  "FMA24481"
+ ],
+ "tarse": [
+  "FMA24482",
+  "FMA24497",
+  "FMA24500",
+  "FMA24528",
+  "FMA24521",
+  "FMA24523",
+  "FMA24525",
+  "FMA24483",
+  "FMA24498",
+  "FMA24501",
+  "FMA24529",
+  "FMA24522",
+  "FMA24524",
+  "FMA24526"
+ ],
+ "metatarsiens": [
+  "FMA24507",
+  "FMA24509",
+  "FMA24511",
+  "FMA24513",
+  "FMA24515",
+  "FMA24508",
+  "FMA24510",
+  "FMA24512",
+  "FMA24514",
+  "FMA24516"
+ ],
+ "scaphoide": [
+  "FMA24435"
+ ],
+ "lunatum": [
+  "FMA24437"
+ ],
+ "triquetrum": [
+  "FMA24439"
+ ],
+ "pisiforme": [
+  "FMA24441"
+ ],
+ "trapeze": [
+  "FMA24443"
+ ],
+ "trapezoide": [
+  "FMA23725"
+ ],
+ "capitatum": [
+  "FMA24446"
+ ],
+ "hamatum": [
+  "FMA24448"
+ ],
+ "talus": [
+  "FMA24482"
+ ],
+ "calcaneus": [
+  "FMA24497"
+ ],
+ "naviculaire": [
+  "FMA24500"
+ ],
+ "cuboide": [
+  "FMA24528"
+ ],
+ "cuneMed": [
+  "FMA24521"
+ ],
+ "cuneInt": [
+  "FMA24523"
+ ],
+ "cuneLat": [
+  "FMA24525"
+ ]
+}

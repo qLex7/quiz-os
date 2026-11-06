@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quel est cet os ? Quiz d’anatomie en 3D</title>
+<meta name="description" content="Quiz d’anatomie : retrouve le nom de chaque os sur un squelette humain en 3D que tu peux faire tourner. Nomenclature internationale (Terminologia Anatomica).">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js", "three/addons/": "./vendor/addons/" } }
+</script>
+<style>
+/* Ambiance radiographie : sombre dans les deux thèmes, c’est le propos de l’écran */
+:root{
+  --bg1:#22324A; --bg2:#0D1420; --ink:#E8F0FA; --muted:#A3B5CD; --rule:rgba(160,190,225,.25);
+  --accent:#8CC2FF; --key:rgba(150,180,220,.13); --key-b:rgba(170,200,235,.3); --key-hit:rgba(140,194,255,.45);
+  --ok:#7FE5BC; --warn:#FFCB74; --bad:#FF9A92;
+  color-scheme:dark;
+}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--bg2)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100vh;color:var(--ink);background:radial-gradient(ellipse at 50% 30%,var(--bg1),var(--bg2) 75%) fixed;font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:16px;line-height:1.45}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:8px;top:-60px;background:var(--accent);color:var(--bg2);padding:8px 12px;border-radius:8px;z-index:20;font-weight:700}
+.skip:focus{top:8px}
+
+.wrap{max-width:980px;margin:0 auto;padding:14px 16px 24px;display:flex;flex-direction:column;align-items:center}
+header{width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 18px}
+h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.01em}
+.modes{display:flex;flex-wrap:wrap;gap:6px}
+.mode{border:1px solid var(--key-b);background:var(--key);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:.9rem;min-height:40px}
+.mode[aria-pressed="true"]{background:var(--ink);color:var(--bg2);border-color:var(--ink)}
+.mode small{opacity:.75;margin-left:4px}
+.stats{display:flex;gap:14px;font-size:.85rem;color:var(--muted);flex-wrap:wrap}
+.stats b{color:var(--ink)}
+
+.stage{position:relative;width:100%;height:min(52vh,560px);min-height:280px;margin-top:8px;border-radius:14px;overflow:hidden;border:1px solid var(--rule);background:radial-gradient(ellipse at 50% 40%,rgba(60,90,130,.35),rgba(8,13,22,.6) 80%)}
+#gl{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#gl:active{cursor:grabbing}
+#gl:focus-visible{outline-offset:-3px}
+.loading,.nogl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;color:var(--muted)}
+.bar{width:min(260px,70%);height:6px;border-radius:3px;background:var(--key);overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
+.camtools{position:absolute;right:8px;top:8px;display:flex;flex-direction:column;gap:6px}
+.cam{border:1px solid var(--key-b);background:rgba(13,20,32,.72);border-radius:10px;padding:7px 11px;cursor:pointer;font-size:.82rem;min-height:36px;backdrop-filter:blur(4px)}
+.cam:hover{border-color:var(--accent)}
+.cam[aria-pressed="true"]{background:var(--ink);color:var(--bg2)}
+.view-name{font-size:.82rem;color:var(--muted);margin:6px 0 0;text-align:center}
+
+.play{width:100%;max-width:640px;display:flex;flex-direction:column;align-items:center}
+.meta{display:flex;justify-content:center;gap:12px;font-size:.88rem;color:var(--muted);margin-top:10px;text-align:center;flex-wrap:wrap}
+.clue{color:var(--muted);text-align:center;margin:4px 0 0;font-size:.95rem;max-width:46ch}
+.word{position:relative;width:100%;margin-top:6px}
+#answer{width:100%;background:transparent;border:0;border-bottom:1px solid var(--rule);text-align:center;font-size:clamp(2rem,6.5vw,3.4rem);font-weight:700;padding:4px 8px 6px;caret-color:var(--accent);letter-spacing:.01em}
+#answer::placeholder{color:rgba(163,181,205,.55);font-weight:400}
+#answer:focus{outline:none;border-bottom:2px solid var(--accent)}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+.hint{min-height:1.4em;margin:6px 0 0;letter-spacing:.2em;color:var(--accent);font-weight:700;text-align:center}
+.fb{min-height:1.5em;margin:4px 0 8px;text-align:center;font-size:.95rem}
+.fb.ok{color:var(--ok)}.fb.warn{color:var(--warn)}.fb.bad{color:var(--bad)}.fb.info{color:var(--ink)}
+
+.kb{width:100%;display:flex;flex-direction:column;gap:6px;user-select:none;-webkit-user-select:none}
+.kb .r{display:flex;gap:5px;justify-content:center}
+.k{flex:1 1 0;max-width:52px;height:46px;border-radius:8px;border:1px solid var(--key-b);background:var(--key);cursor:pointer;font-size:1.05rem;touch-action:manipulation;transition:background .1s}
+.k:active,.k.hit{background:var(--key-hit)}
+.k.w2{max-width:110px;flex-grow:2}.k.w5{max-width:300px;flex-grow:6}
+.k.go{background:var(--accent);color:var(--bg2);font-weight:700;border-color:var(--accent)}
+.tools{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.btn{border:1px solid var(--key-b);background:transparent;border-radius:10px;padding:10px 14px;cursor:pointer;font-size:.92rem;min-height:44px}
+.btn-main{background:var(--accent);color:var(--bg2);border-color:var(--accent);font-weight:700}
+.btn:disabled{opacity:.45;cursor:default}
+.howto{margin-top:14px;font-size:.88rem;color:var(--muted);max-width:560px}
+.howto summary{cursor:pointer;color:var(--ink);text-align:center}
+.howto ul{padding-left:1.1em}
+
+.end{width:100%;max-width:520px;text-align:center;margin-top:12px}
+.end h2{margin:0;font-size:1.4rem}
+.end .big{font-size:3rem;font-weight:700;margin:6px 0 0;line-height:1}
+.review{list-style:none;padding:0;margin:14px 0;text-align:left;max-height:220px;overflow:auto;border-top:1px solid var(--rule)}
+.review li{display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid var(--rule)}
+.tag{font-size:.8rem;white-space:nowrap}.tag.h{color:var(--warn)}.tag.p{color:var(--bad)}
+footer{width:100%;max-width:760px;margin-top:28px;padding-top:14px;border-top:1px solid var(--rule);font-size:.8rem;color:var(--muted);text-align:center}
+footer a{color:var(--accent)}
+footer p{margin:.4em 0}
+[hidden]{display:none!important}
+@media (max-width:600px){ .camtools{flex-direction:row;top:auto;bottom:8px;left:8px;right:8px;justify-content:center;flex-wrap:wrap} .cam{padding:5px 9px;font-size:.78rem;min-height:36px} .stage{height:46vh} .k{height:42px;font-size:.98rem} .kb .r{gap:4px} }
+@media (prefers-reduced-motion:reduce){ .shake{animation:none} .bar i{transition:none} }
+</style>
+</head>
+<body>
+<a class="skip" href="#answer">Aller à la réponse</a>
+<div class="wrap">
+  <header>
+    <h1>Quel est cet os ?</h1>
+    <div class="modes" role="group" aria-label="Choisir une série">
+      <button class="mode" data-mode="squelette" aria-pressed="true">Squelette<small></small></button>
+      <button class="mode" data-mode="main" aria-pressed="false">Main<small></small></button>
+      <button class="mode" data-mode="pied" aria-pressed="false">Pied<small></small></button>
+      <button class="mode" data-mode="tout" aria-pressed="false">Tout<small></small></button>
+    </div>
+    <div class="stats" aria-live="off"><span><b id="sOk">0</b> du 1er coup</span><span><b id="sHelp">0</b> aidés</span><span><b id="sPass">0</b> révélés</span></div>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="gl" tabindex="0" role="img" aria-label="Squelette humain en 3D, en cours de chargement"
+            aria-describedby="glHelp"></canvas>
+    <div class="camtools" role="group" aria-label="Caméra">
+      <button class="cam" id="btnFit" type="button">Recentrer sur l’os</button>
+      <button class="cam" id="btnAll" type="button">Vue d’ensemble</button>
+      <button class="cam" id="btnAuto" type="button" aria-pressed="true">Centrage auto</button>
+    </div>
+    <div class="loading" id="loading" role="status">
+      <span id="loadTxt">Chargement du squelette 3D…</span>
+      <div class="bar" aria-hidden="true"><i id="loadBar"></i></div>
+    </div>
+    <div class="nogl" id="nogl" hidden role="alert"></div>
+  </div>
+  <p class="view-name" id="glHelp">Glisse pour tourner, molette ou pincement pour zoomer. Au clavier (zone 3D sélectionnée) : flèches pour tourner, + et − pour zoomer, 0 pour recentrer.</p>
+
+  <section class="play" id="play">
+    <div class="meta"><span id="count"></span></div>
+    <p class="clue" id="clue"></p>
+    <form class="word" id="f" autocomplete="off">
+      <label for="answer" class="sr">Nom de l’os coloré en blanc</label>
+      <input type="text" id="answer" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="nom de l’os">
+    </form>
+    <p class="hint" id="hint" aria-live="polite"></p>
+    <p class="fb" id="fb" role="status" aria-live="polite"></p>
+    <div class="kb" id="kb" role="group" aria-label="Clavier AZERTY à l’écran"></div>
+    <div class="tools">
+      <button class="btn" id="btnHint" type="button">Afficher une lettre</button>
+      <button class="btn" id="btnPass" type="button">Voir la réponse</button>
+    </div>
+    <details class="howto">
+      <summary>Comment jouer</summary>
+      <ul>
+        <li>L’os en blanc lumineux est à nommer. Fais tourner le squelette pour le voir sous tous les angles, puis tape son nom au clavier (physique ou à l’écran) et Entrée.</li>
+        <li>Pour les os pairs (fémur, côtes…), les deux côtés s’allument.</li>
+        <li>Nomenclature internationale : fibula et non péroné, patella et non rotule, ulna et non cubitus. Les anciens noms sont refusés, le jeu te donne le bon.</li>
+        <li>Accents et majuscules facultatifs. Une faute de frappe proche est signalée sans être validée.</li>
+        <li>Les os trouvés restent teintés en vert. Séries Main et Pied : il s’agit de la main droite et du pied droit.</li>
+      </ul>
+    </details>
+  </section>
+  <section class="end" id="end" hidden aria-live="polite"></section>
+
+  <footer>
+    <p><strong>Crédits.</strong> Modèles 3D : <a href="https://lifesciencedb.jp/bp3d/" target="_blank" rel="noopener">BodyParts3D</a>, © The Database Center for Life Science, sous licence
+      <a href="https://creativecommons.org/licenses/by-sa/2.1/jp/deed.fr" target="_blank" rel="noopener">CC BY-SA 2.1 Japon</a>.
+      Mitsuhashi N. et al., <em>Nucleic Acids Res.</em> 2009, <a href="https://doi.org/10.1093/nar/gkn613" target="_blank" rel="noopener">doi:10.1093/nar/gkn613</a>.</p>
+    <p>Modifications : os sélectionnés, maillages simplifiés, convertis en GLB compressé (Meshopt), repère réorienté. Le coccyx, fusionné au sacrum dans la source, a été isolé par une coupe approximative.
+      Ces modèles dérivés restent sous la même licence CC BY-SA 2.1 Japon.</p>
+    <p>Moteur 3D : <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> (licence MIT). Police : Atkinson Hyperlegible (SIL OFL). Termes : Terminologia Anatomica.</p>
+  </footer>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
+
+/* ---------- Données : nomenclature anatomique internationale (Terminologia Anatomica, version française) ---------- */
+const SERIES = {
+  squelette:["frontal","parietal","temporal","nasal","zygomatique","maxillaire","mandibule","cervicales","vthor","lombaires","sacrum","coccyx","clavicule","scapula","sternum","cotes","humerus","radius","ulna","carpe","metacarpiens","phalangesM","coxal","femur","patella","tibia","fibula","tarse","metatarsiens","phalangesP"],
+  main:["scaphoide","lunatum","triquetrum","pisiforme","trapeze","trapezoide","capitatum","hamatum"],
+  pied:["talus","calcaneus","naviculaire","cuboide","cuneMed","cuneInt","cuneLat"]
+};
+
+const BONES = [
+ // Squelette
+ {id:"frontal",name:"Os frontal",ans:["frontal"],clue:"Crâne : forme le front et le haut des orbites."},
+ {id:"parietal",name:"Os pariétal",ans:["parietal","parietaux"],clue:"Crâne : voûte, sur les côtés et le dessus de la tête (pair)."},
+ {id:"temporal",name:"Os temporal",ans:["temporal","temporaux"],clue:"Crâne : au niveau de la tempe et de l’oreille (pair)."},
+ {id:"nasal",name:"Os nasal",ans:["nasal","nasaux"],old:["propre du nez","propres du nez"],clue:"Face : petite lame à la racine du nez."},
+ {id:"zygomatique",name:"Os zygomatique",ans:["zygomatique","zygomatiques"],old:["malaire","de la pommette","pommette"],clue:"Face : forme la pommette (pair)."},
+ {id:"maxillaire",name:"Maxillaire",ans:["maxillaire","maxillaires"],old:["maxillaire superieur"],clue:"Face : mâchoire supérieure, porte les dents du haut."},
+ {id:"mandibule",name:"Mandibule",ans:["mandibule"],old:["maxillaire inferieur","machoire inferieure"],clue:"Face : mâchoire inférieure, seul os mobile de la tête."},
+ {id:"cervicales",name:"Vertèbres cervicales",ans:["vertebres cervicales","vertebre cervicale","cervicales"],clue:"Rachis : les 7 vertèbres du cou."},
+ {id:"vthor",name:"Vertèbres thoraciques",ans:["vertebres thoraciques","vertebre thoracique","thoraciques"],old:["vertebres dorsales","vertebre dorsale","dorsales"],clue:"Rachis : les 12 vertèbres qui portent les côtes."},
+ {id:"lombaires",name:"Vertèbres lombaires",ans:["vertebres lombaires","vertebre lombaire","lombaires"],clue:"Rachis : les 5 grosses vertèbres du bas du dos."},
+ {id:"sacrum",name:"Sacrum",ans:["sacrum"],clue:"Rachis : 5 vertèbres soudées entre les deux hanches."},
+ {id:"coccyx",name:"Coccyx",ans:["coccyx"],clue:"Rachis : extrémité inférieure de la colonne."},
+ {id:"clavicule",name:"Clavicule",ans:["clavicule","clavicules"],clue:"Ceinture scapulaire : relie le sternum à l’épaule."},
+ {id:"scapula",name:"Scapula",ans:["scapula","scapulas"],old:["omoplate","omoplates"],clue:"Ceinture scapulaire : os plat triangulaire, à l’arrière du thorax."},
+ {id:"sternum",name:"Sternum",ans:["sternum"],clue:"Thorax : os plat au milieu de la poitrine."},
+ {id:"cotes",name:"Côtes",ans:["cotes","cote"],clue:"Thorax : 12 paires, forment la cage thoracique."},
+ {id:"humerus",name:"Humérus",ans:["humerus"],clue:"Membre supérieur : os du bras, entre épaule et coude."},
+ {id:"radius",name:"Radius",ans:["radius"],clue:"Avant-bras : os latéral, côté pouce."},
+ {id:"ulna",name:"Ulna",ans:["ulna","ulnas"],old:["cubitus"],clue:"Avant-bras : os médial, côté auriculaire."},
+ {id:"carpe",name:"Carpe",ans:["carpe","du carpe","carpiens"],clue:"Membre supérieur : ensemble des 8 petits os du poignet."},
+ {id:"metacarpiens",name:"Métacarpiens",ans:["metacarpiens","metacarpien","metacarpe","du metacarpe"],clue:"Main : les 5 os longs de la paume."},
+ {id:"phalangesM",name:"Phalanges",ans:["phalanges","phalange","phalanges de la main","phalanges des doigts"],clue:"Main : os des doigts."},
+ {id:"coxal",name:"Os coxal",ans:["coxal","coxaux"],old:["iliaque","iliaques","de la hanche"],notes:{"ilium":"L’ilium n’est qu’une partie de cet os (avec l’ischium et le pubis). Nomme l’os entier.","bassin":"Le bassin (pelvis) regroupe plusieurs os. Nomme cet os précis.","pelvis":"Le pelvis regroupe plusieurs os. Nomme cet os précis."},clue:"Ceinture pelvienne : os de la hanche (pair)."},
+ {id:"femur",name:"Fémur",ans:["femur","femurs"],clue:"Membre inférieur : os de la cuisse, le plus long du corps."},
+ {id:"patella",name:"Patella",ans:["patella","patellas"],old:["rotule","rotules"],clue:"Genou : petit os sésamoïde devant l’articulation."},
+ {id:"tibia",name:"Tibia",ans:["tibia","tibias"],clue:"Jambe : os médial, porte le poids du corps."},
+ {id:"fibula",name:"Fibula",ans:["fibula","fibulas"],old:["perone","perones"],clue:"Jambe : os fin et latéral."},
+ {id:"tarse",name:"Tarse",ans:["tarse","du tarse","tarsiens"],clue:"Pied : ensemble des 7 os de la cheville et de l’arrière du pied."},
+ {id:"metatarsiens",name:"Métatarsiens",ans:["metatarsiens","metatarsien","metatarse","du metatarse"],clue:"Pied : les 5 os longs entre tarse et orteils."},
+ {id:"phalangesP",name:"Phalanges",ans:["phalanges","phalange","phalanges du pied","phalanges des orteils"],clue:"Pied : os des orteils."},
+ // Main
+ {id:"scaphoide",name:"Scaphoïde",ans:["scaphoide"],clue:"Carpe, rangée proximale : côté pouce, contre le radius."},
+ {id:"lunatum",name:"Lunatum",ans:["lunatum"],old:["semi lunaire","semilunaire"],clue:"Carpe, rangée proximale : en forme de croissant, au centre."},
+ {id:"triquetrum",name:"Triquetrum",ans:["triquetrum"],old:["pyramidal"],clue:"Carpe, rangée proximale : côté auriculaire."},
+ {id:"pisiforme",name:"Pisiforme",ans:["pisiforme"],clue:"Carpe : petit os en forme de pois, posé sur le triquetrum."},
+ {id:"trapeze",name:"Trapèze",ans:["trapeze"],clue:"Carpe, rangée distale : sous le pouce."},
+ {id:"trapezoide",name:"Trapézoïde",ans:["trapezoide"],clue:"Carpe, rangée distale : sous l’index."},
+ {id:"capitatum",name:"Capitatum",ans:["capitatum"],old:["grand os"],clue:"Carpe, rangée distale : le plus gros, sous le majeur."},
+ {id:"hamatum",name:"Hamatum",ans:["hamatum"],old:["crochu","unciforme"],clue:"Carpe, rangée distale : porte un crochet, côté auriculaire."},
+ // Pied
+ {id:"talus",name:"Talus",ans:["talus"],old:["astragale"],clue:"Tarse : articulé avec le tibia et la fibula, sur le calcanéus."},
+ {id:"calcaneus",name:"Calcanéus",ans:["calcaneus"],old:["calcaneum"],clue:"Tarse : os du talon, le plus gros du pied."},
+ {id:"naviculaire",name:"Naviculaire",ans:["naviculaire"],old:["scaphoide","scaphoide tarsien"],clue:"Tarse : en forme de barque, devant la tête du talus."},
+ {id:"cuboide",name:"Cuboïde",ans:["cuboide"],clue:"Tarse : bord latéral du pied, devant le calcanéus."},
+ {id:"cuneMed",name:"Cunéiforme médial",ans:["cuneiforme medial"],old:["premier cuneiforme","1er cuneiforme","1 cuneiforme","grand cuneiforme"],clue:"Tarse : le plus médial des trois, sous le gros orteil."},
+ {id:"cuneInt",name:"Cunéiforme intermédiaire",ans:["cuneiforme intermediaire"],old:["deuxieme cuneiforme","2e cuneiforme","2eme cuneiforme","2 cuneiforme","petit cuneiforme"],clue:"Tarse : le cunéiforme du milieu, le plus petit."},
+ {id:"cuneLat",name:"Cunéiforme latéral",ans:["cuneiforme lateral"],old:["troisieme cuneiforme","3e cuneiforme","3eme cuneiforme","3 cuneiforme","moyen cuneiforme"],clue:"Tarse : le plus latéral des trois, contre le cuboïde."}
+];
+BONES.forEach(b=>{ b.view = Object.keys(SERIES).find(k=>SERIES[k].includes(b.id)); });
+
+/* ---------- Normalisation et comparaison ---------- */
+function norm(s){
+  return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"")
+   .replace(/[’`]/g,"'").replace(/œ/g,"oe").replace(/[-_.,;:!?()"]/g," ")
+   .replace(/\s+/g," ").trim()
+   .replace(/^(l'|le |la |les |un |une |des |c'est |c est )/,"").trim()
+   .replace(/^l /,"").replace(/^os /,"").trim();
+}
+function lev(a,b){ const m=a.length,n=b.length; if(!m) return n; if(!n) return m; let p=[...Array(n+1).keys()]; for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c;} return p[n]; }
+BONES.forEach(b=>{ b.nAns=b.ans.map(norm); b.nOld=(b.old||[]).map(norm); b.nName=norm(b.name); });
+
+/* =====================================================================
+   Scène 3D
+   ===================================================================== */
+const $=id=>document.getElementById(id);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)");
+const canvas=$("gl"), stage=$("stage");
+const state = { states:new Map(), meshes:new Map(), groups:{}, ready:false, auto:true, activeId:null, glow:[] };
+
+let renderer;
+try{
+  renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true, powerPreference:"high-performance"});
+}catch(e){
+  $("loading").hidden=true; const n=$("nogl"); n.hidden=false;
+  n.innerHTML="La 3D n’est pas disponible sur cet appareil (WebGL désactivé).<br>Active l’accélération matérielle dans ton navigateur ou essaie-en un autre.";
+  canvas.setAttribute("aria-label","Vue 3D indisponible");
+}
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(35,1,0.01,40);
+camera.position.set(0,0.9,4.2);
+let controls;
+if(renderer){
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  controls=new OrbitControls(camera,canvas);
+  controls.enableDamping=!reduce.matches; controls.dampingFactor=0.08;
+  controls.minDistance=0.06; controls.maxDistance=6; controls.screenSpacePanning=true;
+  controls.target.set(0,0.9,0);
+  controls.update();
+}
+
+/* matériaux « radiographie » */
+const VERT=`varying vec3 vN; varying vec3 vV;
+void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position+normal*uPush,1.0); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`;
+const xray=(hex,base,rim)=>new THREE.ShaderMaterial({
+  uniforms:{uColor:{value:new THREE.Color(hex)},uBase:{value:base},uRim:{value:rim}},
+  vertexShader:"uniform float uPush;\n".replace("uniform float uPush;","const float uPush=0.0;")+VERT,
+  fragmentShader:`uniform vec3 uColor; uniform float uBase; uniform float uRim; varying vec3 vN; varying vec3 vV;
+    void main(){ float f=1.0-abs(dot(normalize(vN),normalize(vV))); float a=uBase+uRim*pow(f,2.2); gl_FragColor=vec4(uColor,a); }`,
+  transparent:true, depthWrite:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide
+});
+const MAT = {
+  idle: xray("#A9C8F0",0.10,0.60),
+  found: xray("#6EE1BC",0.17,0.75),
+  active: new THREE.ShaderMaterial({
+    vertexShader:"const float uPush=0.0;\n"+VERT,
+    fragmentShader:`varying vec3 vN; varying vec3 vV;
+      void main(){ float d=abs(dot(normalize(vN),normalize(vV))); float s=0.80+0.20*d; gl_FragColor=vec4(vec3(1.0)*s,1.0); }`,
+    transparent:true, depthWrite:true, depthTest:true, side:THREE.DoubleSide
+  })
+};
+const glowMat=(push)=>{ const m=new THREE.ShaderMaterial({
+  uniforms:{uK:{value:1.0}},
+  vertexShader:`varying vec3 vN; varying vec3 vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position+normal*${push.toFixed(5)},1.0); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
+  fragmentShader:`uniform float uK; varying vec3 vN; varying vec3 vV;
+    void main(){ float d=abs(dot(normalize(vN),normalize(vV))); gl_FragColor=vec4(vec3(1.0),(0.10+0.55*(1.0-d))*uK); }`,
+  transparent:true, depthWrite:false, depthTest:true, blending:THREE.AdditiveBlending, side:THREE.BackSide }); return m; };
+
+function resize(){
+  if(!renderer) return;
+  const w=stage.clientWidth,h=stage.clientHeight;
+  renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); dirty=true;
+}
+new ResizeObserver(resize).observe(stage);
+
+/* chargement du modèle */
+async function loadModel(){
+  const [bones]=await Promise.all([fetch("assets/bones.json").then(r=>r.json())]);
+  state.groups=bones;
+  const loader=new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+  const gltf=await new Promise((res,rej)=>loader.load("assets/skeleton.glb",res,e=>{
+    if(e.lengthComputable){ const p=Math.round(e.loaded/e.total*100); $("loadBar").style.width=p+"%"; $("loadTxt").textContent=`Chargement du squelette 3D… ${p} %`; }
+  },rej));
+  gltf.scene.traverse(o=>{ if(o.isMesh){ o.material=MAT.idle; o.frustumCulled=false; state.meshes.set(o.name,o); } });
+  // dédoublonne : les noms de nœuds sont les identifiants FMA
+  scene.add(gltf.scene);
+  scene.updateMatrixWorld(true);
+  state.ready=true;
+}
+
+/* états -> matériaux */
+function meshesOf(id){ return (state.groups[id]||[]).map(f=>state.meshes.get(f)).filter(Boolean); }
+function applyStates(){
+  const rank={idle:0,found:1,active:2}; const best=new Map();
+  for(const m of new Set(state.meshes.values())) best.set(m,"idle");
+  for(const [id,st] of state.states){ for(const m of meshesOf(id)){ if(rank[st]>rank[best.get(m)]) best.set(m,st); } }
+  for(const [m,st] of best) m.material=MAT[st];
+  // halo des os actifs
+  state.glow.forEach(g=>{ g.parent&&g.parent.remove(g); }); state.glow=[];
+  if(state.activeId){
+    const ms=meshesOf(state.activeId); const r=groupSphere(ms).radius;
+    const push=Math.min(0.012,Math.max(0.0012,r*0.035));
+    const uK={value:1.0}; state.glowK=uK;
+    for(const m of ms){ const gm=glowMat(push/(m.scale.x||1)); gm.uniforms.uK=uK; const g=new THREE.Mesh(m.geometry,gm); g.frustumCulled=false; g.renderOrder=5; m.add(g); state.glow.push(g); }
+  }
+  dirty=true;
+}
+function groupSphere(ms){
+  const box=new THREE.Box3(); ms.forEach(m=>{ m.updateWorldMatrix(true,false); box.expandByObject(m); });
+  const s=new THREE.Sphere(); box.getBoundingSphere(s); return s;
+}
+
+/* caméra : centrage animé */
+let anim=null, dirty=true;
+function flyTo(center,dist,instant){
+  const dir=camera.position.clone().sub(controls.target).normalize();
+  const toPos=center.clone().add(dir.multiplyScalar(dist));
+  if(instant||reduce.matches){ controls.target.copy(center); camera.position.copy(toPos); controls.update(); dirty=true; anim=null; return; }
+  anim={t0:performance.now(),d:700,fp:camera.position.clone(),tp:toPos,ft:controls.target.clone(),tt:center.clone()};
+}
+function distFor(radius){
+  const vf=THREE.MathUtils.degToRad(camera.fov)/2, hf=Math.atan(Math.tan(vf)*camera.aspect);
+  return Math.max(0.1, radius/Math.sin(Math.min(vf,hf))*1.2);
+}
+function focusActive(instant){ if(!state.ready||!state.activeId) return; const s=groupSphere(meshesOf(state.activeId)); flyTo(s.center,distFor(s.radius),instant); }
+function overview(){ flyTo(new THREE.Vector3(0,0.9,0),distFor(1.0),false); }
+function setActive(id){ state.activeId=id; for(const [k,v] of state.states) if(v==="active") state.states.set(k,"idle"); if(id) state.states.set(id,"active"); applyStates(); if(state.auto) focusActive(false); }
+function setFound(id){ state.states.set(id,"found"); if(state.activeId===id) state.activeId=null; applyStates(); }
+function resetStates(){ state.states.clear(); state.activeId=null; applyStates(); }
+
+let lastT=performance.now();
+function frame(now){
+  requestAnimationFrame(frame);
+  if(!renderer||!state.ready) return;
+  if(anim){ const k=Math.min(1,(now-anim.t0)/anim.d), e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+    camera.position.lerpVectors(anim.fp,anim.tp,e); controls.target.lerpVectors(anim.ft,anim.tt,e); if(k>=1) anim=null; dirty=true; }
+  if(controls.update()) dirty=true;
+  if(state.glowK&&state.activeId&&!reduce.matches){ state.glowK.value=0.8+0.2*Math.sin(now/450); dirty=true; }
+  if(dirty){ dirty=false; renderer.render(scene,camera); }
+}
+if(controls){ controls.addEventListener("change",()=>{ dirty=true; }); controls.addEventListener("start",()=>{ anim=null; }); }
+reduce.addEventListener("change",()=>{ if(controls) controls.enableDamping=!reduce.matches; });
+
+/* contrôle clavier de la vue 3D (canvas focalisé) */
+canvas.addEventListener("keydown",e=>{
+  if(!controls) return;
+  const off=camera.position.clone().sub(controls.target); const sph=new THREE.Spherical().setFromVector3(off); let used=true;
+  const stp=Math.PI/14;
+  switch(e.key){
+    case "ArrowLeft": sph.theta-=stp; break; case "ArrowRight": sph.theta+=stp; break;
+    case "ArrowUp": sph.phi=Math.max(0.1,sph.phi-stp); break; case "ArrowDown": sph.phi=Math.min(Math.PI-0.1,sph.phi+stp); break;
+    case "+": case "=": sph.radius=Math.max(controls.minDistance,sph.radius*0.8); break;
+    case "-": case "_": sph.radius=Math.min(controls.maxDistance,sph.radius*1.25); break;
+    case "0": focusActive(false); used=false; e.preventDefault(); return;
+    default: used=false;
+  }
+  if(used){ e.preventDefault(); e.stopPropagation(); off.setFromSpherical(sph); camera.position.copy(controls.target).add(off); controls.update(); dirty=true; }
+});
+$("btnFit").addEventListener("click",()=>focusActive(false));
+$("btnAll").addEventListener("click",overview);
+$("btnAuto").addEventListener("click",e=>{ state.auto=!state.auto; e.currentTarget.setAttribute("aria-pressed",state.auto); if(state.auto) focusActive(false); });
+
+/* =====================================================================
+   Jeu (logique conservée de la version 2D)
+   ===================================================================== */
+const inp=$("answer");
+let S={};
+const STORE="quiz-os-best";
+const touch = matchMedia("(pointer: coarse)").matches;
+if(touch) inp.setAttribute("inputmode","none"); // sur mobile, on utilise le clavier à l’écran
+function getBest(){ try{ return JSON.parse(localStorage.getItem(STORE)||"{}"); }catch(e){ return {}; } }
+function setBest(mode,val){ try{ const b=getBest(); if(b[mode]==null||val>b[mode]){ b[mode]=val; localStorage.setItem(STORE,JSON.stringify(b)); return true;} }catch(e){} return false; }
+function bonesFor(mode){ return mode==="tout" ? BONES.slice() : BONES.filter(b=>b.view===mode); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* clavier AZERTY */
+const ROWS=[["a","z","e","r","t","y","u","i","o","p"],["q","s","d","f","g","h","j","k","l","m"],["w","x","c","v","b","n","é","è","’","⌫"],["-","espace","Entrée"]];
+function buildKb(){
+  $("kb").innerHTML=ROWS.map(r=>`<div class="r">${r.map(k=>{
+    const cls = k==="espace"?"k w5":k==="Entrée"?"k w2 go":k==="⌫"?"k w2":"k";
+    const lab = k==="⌫"?"Effacer":k;
+    return `<button type="button" class="${cls}" data-k="${k}" aria-label="${lab}">${k==="espace"?"":k}</button>`;}).join("")}</div>`).join("");
+  $("kb").addEventListener("click",e=>{
+    const b=e.target.closest(".k"); if(!b||S.locked) return;
+    const k=b.dataset.k;
+    if(k==="Entrée") return check();
+    if(k==="⌫") inp.value=inp.value.slice(0,-1);
+    else inp.value+= k==="espace"?" ":k==="’"?"'":k;
+    if(!touch) inp.focus();
+  });
+}
+function flashKey(key){
+  let k=key.toLowerCase();
+  if(k===" ") k="espace"; if(k==="backspace") k="⌫"; if(k==="enter") k="Entrée"; if(k==="'") k="’";
+  const el=document.querySelector(`.k[data-k="${CSS.escape(k)}"]`);
+  if(el){ el.classList.add("hit"); setTimeout(()=>el.classList.remove("hit"),140); }
+}
+document.addEventListener("keydown",e=>{
+  if(document.activeElement===canvas) return; // le clavier est réservé à la caméra
+  flashKey(e.key);
+  if(document.activeElement!==inp && !S.locked && $("end").hidden && e.key.length===1 && !e.ctrlKey && !e.metaKey && !e.altKey && !(document.activeElement && document.activeElement.closest("summary,.mode,.btn,.cam,.k"))){
+    inp.focus();
+  }
+});
+
+function countLabels(){ document.querySelectorAll(".mode").forEach(b=>{ b.querySelector("small").textContent=bonesFor(b.dataset.mode).length; }); }
+
+function start(mode,list){
+  S={mode,queue:shuffle(list||bonesFor(mode)),i:0,results:[],hints:0,errors:0,locked:false};
+  document.querySelectorAll(".mode").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode===mode));
+  resetStates();
+  $("play").hidden=false; $("end").hidden=true;
+  show();
+}
+
+function show(){
+  const b=S.queue[S.i];
+  S.hints=0; S.errors=0; S.locked=false;
+  setActive(b.id);
+  canvas.setAttribute("aria-label",`Squelette humain en 3D. Un os est allumé en blanc : ${b.clue}`);
+  $("count").textContent=`Os ${S.i+1} / ${S.queue.length}`;
+  $("clue").textContent=b.clue;
+  $("hint").textContent=""; fb("","");
+  inp.value=""; inp.readOnly=false;
+  $("btnHint").disabled=false; $("btnPass").disabled=false;
+  if(!touch) inp.focus({preventScroll:true});
+  updateStats();
+}
+
+function fb(kind,html){ const el=$("fb"); el.className="fb"+(kind?" "+kind:""); el.innerHTML=html; }
+function updateStats(){ const c=t=>S.results.filter(r=>r.t===t).length; $("sOk").textContent=c("ok"); $("sHelp").textContent=c("aide"); $("sPass").textContent=c("passe"); }
+function shake(){ inp.classList.remove("shake"); void inp.offsetWidth; inp.classList.add("shake"); if(!touch) inp.focus(); }
+
+function check(e){
+  e && e.preventDefault();
+  if(S.locked) return;
+  const b=S.queue[S.i], v=norm(inp.value);
+  if(!v){ shake(); fb("info","Tape le nom de l’os, puis Entrée."); return; }
+  if(b.nAns.includes(v) || v===b.nName) return success(b);
+  S.errors++;
+  if(b.nOld.includes(v)){ fb("warn",`C’est l’ancien nom. Aujourd’hui on dit <b>${b.name}</b>. Tape-le pour continuer.`); return shake(); }
+  if(b.notes && b.notes[v]){ fb("warn",b.notes[v]); return shake(); }
+  if(b.nAns.concat([b.nName]).some(a=>v.length>=4 && lev(v,a)<=2)){ fb("warn","Presque ! Vérifie l’orthographe."); return shake(); }
+  const other=BONES.find(o=>o.id!==b.id && o.name!==b.name && (o.nAns.includes(v)||o.nOld.includes(v)));
+  if(other){ fb("bad",`Non : « ${other.name} » est un autre os. Relis l’indice.`); return shake(); }
+  fb("bad", S.errors>=3 ? "Toujours pas. Essaie « Afficher une lettre »." : "Ce n’est pas ça. Réessaie.");
+  shake();
+}
+
+function success(b){
+  S.locked=true;
+  S.results.push({b,t:(S.hints||S.errors)?"aide":"ok"});
+  setFound(b.id);
+  inp.value=b.name.toLowerCase(); inp.readOnly=true;
+  fb("ok",`Bravo : <b>${b.name}</b>${b.old&&b.old.length?` (anciennement ${b.old[0]})`:""}.`);
+  updateStats(); setTimeout(next,1100);
+}
+
+function hint(){
+  if(S.locked) return;
+  const b=S.queue[S.i]; S.hints++;
+  const total=[...b.name].filter(c=>c!==" ").length;
+  if(S.hints>=total) return reveal();
+  let k=0; $("hint").textContent=[...b.name.toLowerCase()].map(c=>c===" "?"  ":(++k<=S.hints?c:"_")).join("");
+  if(!touch) inp.focus();
+}
+
+function reveal(){
+  if(S.locked) return;
+  S.locked=true;
+  const b=S.queue[S.i];
+  S.results.push({b,t:"passe"});
+  inp.value=b.name.toLowerCase(); inp.readOnly=true; $("hint").textContent="";
+  fb("info",`Réponse : <b>${b.name}</b>${b.old&&b.old.length?` (anciennement ${b.old[0]})`:""}.`);
+  $("btnHint").disabled=true; $("btnPass").disabled=true;
+  state.activeId=null; for(const [k,v] of state.states) if(v==="active") state.states.set(k,"idle"); applyStates();
+  updateStats(); setTimeout(next,2200);
+}
+
+function next(){ S.i++; if(S.i>=S.queue.length) return end(); show(); }
+
+function end(){
+  state.activeId=null; applyStates(); if(state.auto) overview();
+  const n=S.queue.length, ok=S.results.filter(r=>r.t==="ok").length, pct=Math.round(ok/n*100);
+  const record=setBest(S.mode,pct), best=getBest()[S.mode];
+  const rev=S.results.filter(r=>r.t!=="ok");
+  $("play").hidden=true; const E=$("end"); E.hidden=false;
+  E.innerHTML=`<h2>Série terminée</h2><p class="big">${ok} / ${n}</p>
+    <p style="color:var(--muted);margin-top:6px">trouvés du premier coup${record?", nouveau record !":best!=null?` (record : ${best} %)`:""}</p>
+    ${rev.length?`<ul class="review">${rev.map(r=>`<li><span>${r.b.name}${r.b.old&&r.b.old.length?` <span style="color:var(--muted)">(anc. ${r.b.old[0]})</span>`:""}</span><span class="tag ${r.t==="aide"?"h":"p"}">${r.t==="aide"?"avec aide":"révélé"}</span></li>`).join("")}</ul>`:`<p>Sans faute. Essaie une autre série.</p>`}
+    <div class="tools">${rev.length?`<button class="btn btn-main" id="againErr" type="button">Revoir ces ${rev.length} os</button>`:""}<button class="btn ${rev.length?"":"btn-main"}" id="again" type="button">Rejouer la série</button></div>`;
+  const a=$("againErr"); if(a) a.onclick=()=>start(S.mode,rev.map(r=>r.b));
+  $("again").onclick=()=>start(S.mode);
+  (a||$("again")).focus();
+}
+
+$("f").addEventListener("submit",check);
+$("btnHint").addEventListener("click",hint);
+$("btnPass").addEventListener("click",reveal);
+document.querySelectorAll(".mode").forEach(b=>b.addEventListener("click",()=>start(b.dataset.mode)));
+buildKb(); countLabels();
+
+/* démarrage : le jeu attend le modèle */
+$("play").hidden=true;
+if(renderer){
+  resize(); requestAnimationFrame(frame);
+  loadModel().then(()=>{
+    $("loading").hidden=true; $("play").hidden=false; resize();
+    canvas.setAttribute("aria-label","Squelette humain en 3D");
+    start("squelette"); focusActive(true);
+  }).catch(err=>{
+    console.error(err); $("loading").hidden=true; const n=$("nogl"); n.hidden=false;
+    n.textContent="Impossible de charger le modèle 3D. Vérifie ta connexion puis recharge la page.";
+  });
+}else{
+  $("play").hidden=true;
+}
+</script>
+</body>
+</html>
