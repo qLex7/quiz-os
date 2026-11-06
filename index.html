@@ -33,9 +33,12 @@ button,input{font:inherit;color:inherit}
 header{width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 18px}
 h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.01em}
 .modes{display:flex;flex-wrap:wrap;gap:6px}
-.mode{border:1px solid var(--key-b);background:var(--key);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:.9rem;min-height:40px}
-.mode[aria-pressed="true"]{background:var(--ink);color:var(--bg2);border-color:var(--ink)}
-.mode small{opacity:.75;margin-left:4px}
+.mode,.lvlbtn{border:1px solid var(--key-b);background:var(--key);border-radius:999px;padding:8px 14px;cursor:pointer;font-size:.9rem;min-height:40px}
+.mode[aria-pressed="true"],.lvlbtn[aria-pressed="true"]{background:var(--ink);color:var(--bg2);border-color:var(--ink)}
+.mode small,.lvlbtn small{opacity:.75;margin-left:4px}
+.lvlbtn:disabled{opacity:.45;cursor:not-allowed}
+.lvlbtn.alt{border-style:dashed}
+.modes[hidden]{display:none}
 .stats{display:flex;gap:14px;font-size:.85rem;color:var(--muted);flex-wrap:wrap}
 .stats b{color:var(--ink)}
 
@@ -50,6 +53,19 @@ h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.01em}
 .cam{border:1px solid var(--key-b);background:rgba(13,20,32,.72);border-radius:10px;padding:7px 11px;cursor:pointer;font-size:.82rem;min-height:36px;backdrop-filter:blur(4px)}
 .cam:hover{border-color:var(--accent)}
 .cam[aria-pressed="true"]{background:var(--ink);color:var(--bg2)}
+.launch{width:100%;max-width:760px;text-align:center;margin:40px auto 0}
+.launch h1{font-size:2rem;margin-bottom:6px}
+.launch p.lead{color:var(--muted);margin:0 0 22px;font-size:1.05rem}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{border:1px solid var(--key-b);background:var(--key);border-radius:16px;padding:20px 16px;cursor:pointer;text-align:left;min-height:150px;display:flex;flex-direction:column;gap:8px}
+.card:hover{border-color:var(--accent)}
+.card b{font-size:1.2rem}
+.card span{color:var(--muted);font-size:.95rem}
+.card.main-card{background:var(--accent);color:var(--bg2);border-color:var(--accent)}
+.card.main-card span{color:var(--bg2)}
+.lvlinfo{list-style:none;margin:20px 0 0;padding:0;display:grid;gap:6px;text-align:left;font-size:.92rem;color:var(--muted)}
+.lvlinfo li b{color:var(--ink)}
+@media (max-width:640px){ .cards{grid-template-columns:1fr} }
 .main{width:100%;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:20px;align-items:start}
 .col{display:flex;flex-direction:column;align-items:center;min-width:0}
 .col>.stage{margin-top:8px}
@@ -77,11 +93,12 @@ h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.01em}
 .seg .cam:first-child{border-radius:10px 0 0 10px}
 .seg .cam:last-child{border-radius:0 10px 10px 0;border-left:0}
 @media (max-width:900px){ .main{grid-template-columns:minmax(0,1fr)} .side{position:static;max-height:none} }
+#zoneName{font-size:1.25rem}
 .view-name{font-size:.82rem;color:var(--muted);margin:6px 0 0;text-align:center}
 
 .play{width:100%;max-width:640px;display:flex;flex-direction:column;align-items:center}
-.meta{display:flex;justify-content:center;gap:12px;font-size:.88rem;color:var(--muted);margin-top:10px;text-align:center;flex-wrap:wrap}
-.clue{color:var(--muted);text-align:center;margin:4px 0 0;font-size:.95rem;max-width:46ch}
+.meta{display:flex;justify-content:center;gap:12px;font-size:1.3rem;font-weight:700;color:var(--ink);margin-top:10px;text-align:center;flex-wrap:wrap}
+.clue{color:var(--ink);text-align:center;margin:6px 0 0;font-size:1.25rem;line-height:1.4;max-width:46ch}
 .word{position:relative;width:100%;margin-top:6px}
 #answer{width:100%;background:transparent;border:0;border-bottom:1px solid var(--rule);text-align:center;font-size:clamp(2rem,6.5vw,3.4rem);font-weight:700;padding:4px 8px 6px;caret-color:var(--accent);letter-spacing:.01em}
 #answer::placeholder{color:rgba(163,181,205,.55);font-weight:400}
@@ -123,15 +140,27 @@ footer p{margin:.4em 0}
 <body>
 <a class="skip" href="#answer">Aller à la réponse</a>
 <div class="wrap">
+  <section class="launch" id="launch" aria-labelledby="launchTitle">
+    <h1 id="launchTitle">Quel est cet os ?</h1>
+    <p class="lead">Les 206 os du corps humain en 3D. Comment veux-tu jouer ?</p>
+    <div class="cards">
+      <button class="card main-card" id="lcLevels" type="button"><b id="lcLevelsT">Parcours par niveaux</b><span id="lcLevelsD"></span></button>
+      <button class="card" id="lcTrain" type="button"><b>S’entraîner sur tous les os</b><span>Les 120 noms mélangés au hasard, avec les aides autorisées. Tu peux aussi t’exercer série par série : Squelette, Crâne, Main, Pied.</span></button>
+    </div>
+    <ul class="lvlinfo" id="lvlinfo" aria-label="Description des niveaux"></ul>
+  </section>
+  <div id="app" hidden>
   <header>
     <h1>Quel est cet os ?</h1>
-    <div class="modes" role="group" aria-label="Choisir une série">
+    <div class="modes" id="modesTrain" role="group" aria-label="Choisir une série d’entraînement">
       <button class="mode" data-mode="squelette" aria-pressed="true">Squelette<small></small></button>
       <button class="mode" data-mode="crane" aria-pressed="false">Crâne<small></small></button>
       <button class="mode" data-mode="main" aria-pressed="false">Main<small></small></button>
       <button class="mode" data-mode="pied" aria-pressed="false">Pied<small></small></button>
       <button class="mode" data-mode="tout" aria-pressed="false">Tout<small></small></button>
+      <button class="lvlbtn alt" id="goLevels" type="button">Parcours par niveaux</button>
     </div>
+    <div class="modes" id="modesLevel" role="group" aria-label="Choisir un niveau" hidden></div>
     <div class="stats" aria-live="off"><span><b id="sOk">0</b> du 1er coup</span><span><b id="sHelp">0</b> aidés</span><span><b id="sPass">0</b> révélés</span></div>
   </header>
 
@@ -199,6 +228,7 @@ footer p{margin:.4em 0}
   </aside>
   </div>
 
+  </div>
   <footer>
     <p><strong>Crédits.</strong> Modèles 3D : <a href="https://lifesciencedb.jp/bp3d/" target="_blank" rel="noopener">BodyParts3D</a>, © The Database Center for Life Science, sous licence
       <a href="https://creativecommons.org/licenses/by-sa/2.1/jp/deed.fr" target="_blank" rel="noopener">CC BY-SA 2.1 Japon</a>.
@@ -348,6 +378,24 @@ const SERIES = {
 };
 BONES.forEach(b=>{ b.view = ["squelette","crane","main","pied"].filter(k=>SERIES[k].includes(b.id)); });
 const REGION_OF={}; BONES.forEach(b=>REGION_OF[b.id]=b.region);
+
+/* ---------- Difficulté : 5 niveaux cumulatifs (niveau n = os de difficulté 1 à n ; niveau 5 = tous les os) ---------- */
+const range=(a,b,p)=>Array.from({length:b-a+1},(_,i)=>p+(a+i));
+const TIER={};
+const setTier=(t,ids)=>ids.forEach(id=>TIER[id]=t);
+setTier(1,["frontal","parietal","temporal","occipital","nasal","maxillaire","zygomatique","mandibule","sternum","clavicule","scapula","humerus","radius","ulna","coxal","sacrum","coccyx","femur","patella","tibia","fibula","c1","c2","talus","calcaneus"]);
+setTier(2,["sphenoide","ethmoide","hyoide","c7",...range(1,5,"l"),"r1","r2","r12","scaphoide","capitatum","hamatum","pisiforme","naviculaire","cuboide","mc1","mt1","ph_pouce_p","ph_pouce_d","ph_hallux_p","ph_hallux_d"]);
+setTier(3,["vomer","palatin","lacrimal","cornet","lunatum","triquetrum","trapeze","trapezoide","cuneMed","cuneInt","cuneLat","c3","c4","c5","c6","t1","t12","mc2","mc3","mc4","mc5","mt2","mt3","mt4","mt5","r3","r4","r5"]);
+setTier(4,[...range(2,11,"t"),...range(6,11,"r"),...["index","majeur","annulaire","auriculaire","o2","o3","o4","o5"].map(k=>"ph_"+k+"_d")]);
+BONES.forEach(b=>{ b.tier=TIER[b.id]||5; });
+const LEVELS=[
+  {n:1,nom:"Niveau 1",desc:"Les os les plus faciles"},
+  {n:2,nom:"Niveau 2",desc:"+ les os moyens"},
+  {n:3,nom:"Niveau 3",desc:"+ les os difficiles"},
+  {n:4,nom:"Niveau 4",desc:"+ les os très difficiles"},
+  {n:5,nom:"Niveau 5",desc:"Tous les os"}
+];
+const levelBones=n=>BONES.filter(b=>b.tier<=n);
 
 /* ---------- Normalisation et comparaison ---------- */
 function norm(s){
@@ -619,7 +667,7 @@ function flashKey(key){
 document.addEventListener("keydown",e=>{
   if(document.activeElement===canvas) return; // le clavier est réservé à la caméra
   flashKey(e.key);
-  if(document.activeElement!==inp && !S.locked && $("end").hidden && e.key.length===1 && !e.ctrlKey && !e.metaKey && !e.altKey && !(document.activeElement && document.activeElement.closest("summary,.mode,.btn,.cam,.k"))){
+  if(document.activeElement!==inp && !S.locked && $("end").hidden && e.key.length===1 && !e.ctrlKey && !e.metaKey && !e.altKey && !(document.activeElement && document.activeElement.closest("summary,.mode,.lvlbtn,.card,.btn,.cam,.k"))){
     inp.focus();
   }
 });
@@ -629,23 +677,67 @@ function countLabels(){ document.querySelectorAll(".mode").forEach(b=>{ b.queryS
 const foundBy={squelette:new Set(),crane:new Set(),main:new Set(),pied:new Set(),tout:new Set()};
 const MODE_LABEL={squelette:"Squelette",crane:"Crâne",main:"Main",pied:"Pied",tout:"Tout"};
 function resetCanvasSlide(){ canvas.style.transition="none"; canvas.style.transform=""; canvas.style.opacity=""; }
+const LSTORE="quiz-os-niveau";
+function getDone(){ try{ return Math.min(5,Math.max(0,parseInt(localStorage.getItem(LSTORE)||"0",10)||0)); }catch(e){ return 0; } }
+function setDone(n){ try{ if(n>getDone()) localStorage.setItem(LSTORE,String(n)); }catch(e){} }
+function nextLevel(){ return Math.min(5,getDone()+1); }
 function start(mode,list){
   const prevHist=(list&&S.mode===mode&&S.hist)?S.hist:[];
   resetCanvasSlide();
   if(!list) foundBy[mode]=new Set();
-  S={mode,queue:randomOrder(list||bonesFor(mode)),i:0,results:[],hist:prevHist,hints:0,errors:0,locked:false};
+  S={kind:"train",mode,queue:randomOrder(list||bonesFor(mode)),i:0,results:[],hist:prevHist,hints:0,errors:0,locked:false};
+  $("modesTrain").hidden=false; $("modesLevel").hidden=true;
   document.querySelectorAll(".mode").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode===mode));
   resetStates();
   $("play").hidden=false; $("end").hidden=true;
   updateSide(); show();
 }
 
+function renderLevelButtons(){
+  const done=getDone();
+  $("modesLevel").innerHTML=LEVELS.map(L=>{ const ok=L.n<=done+1; return `<button class="lvlbtn" data-level="${L.n}" aria-pressed="false" ${ok?"":"disabled"} title="${ok?L.desc:"Réussis le niveau précédent sans aide ni erreur pour le débloquer"}">${L.nom}${L.n<=done?" ✓":ok?"":" 🔒"}<small>${levelBones(L.n).length}</small></button>`; }).join("")+'<button class="lvlbtn alt" id="goTrain" type="button">Entraînement libre</button>';
+  $("modesLevel").querySelectorAll("[data-level]").forEach(b=>b.addEventListener("click",()=>startLevel(+b.dataset.level)));
+  $("goTrain").addEventListener("click",()=>start("tout"));
+}
+function startLevel(n){
+  resetCanvasSlide(); resetStates(); renderLevelButtons();
+  S={kind:"level",level:n,mode:"niveau"+n,queue:randomOrder(levelBones(n)),i:0,results:[],hist:[],hints:0,errors:0,locked:false};
+  $("modesTrain").hidden=true; $("modesLevel").hidden=false;
+  $("modesLevel").querySelectorAll("[data-level]").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.level===n));
+  $("play").hidden=false; $("end").hidden=true;
+  updateSide(); show();
+}
+function failLevel(reason){
+  S.locked=true; const b=S.queue[S.i];
+  state.activeId=null; for(const [k,v] of state.states) if(v==="active") state.states.set(k,"idle"); applyStates();
+  $("play").hidden=true; const E=$("end"); E.hidden=false;
+  E.innerHTML=`<h2>Niveau ${S.level} à recommencer</h2>
+    <p style="color:var(--bad);font-size:1.1rem">${reason}</p>
+    <p>Réponse attendue : <b>${b.name}</b>. Tu avais trouvé ${S.hist.length} os sur ${S.queue.length} sans faute.</p>
+    <p style="color:var(--muted)">Pour valider un niveau, il faut tout trouver du premier coup, sans aide ni erreur. L’ordre sera tiré au hasard de nouveau.</p>
+    <div class="tools"><button class="btn btn-main" id="retry" type="button">Recommencer le niveau ${S.level}</button><button class="btn" id="toTrain" type="button">M’entraîner librement</button></div>`;
+  const lv=S.level; $("retry").onclick=()=>startLevel(lv); $("toTrain").onclick=()=>start("tout"); $("retry").focus();
+}
+function winLevel(){
+  const n=S.level; setDone(n); renderLevelButtons();
+  $("modesLevel").querySelectorAll("[data-level]").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.level===n));
+  state.activeId=null; applyStates();
+  $("play").hidden=true; const E=$("end"); E.hidden=false;
+  E.innerHTML=n<5
+   ? `<h2>Niveau ${n} réussi !</h2><p class="big">${S.queue.length} / ${S.queue.length}</p><p>Sans aide ni erreur. Le niveau ${n+1} est débloqué (${levelBones(n+1).length} os).</p>
+      <div class="tools"><button class="btn btn-main" id="nextLvl" type="button">Passer au niveau ${n+1}</button><button class="btn" id="again" type="button">Rejouer le niveau ${n}</button></div>`
+   : `<h2>Parcours terminé !</h2><p class="big">${S.queue.length} / ${S.queue.length}</p><p>Tu connais les 206 os du corps humain, sans aide ni erreur.</p>
+      <div class="tools"><button class="btn btn-main" id="again" type="button">Rejouer le niveau 5</button><button class="btn" id="toTrain" type="button">M’entraîner librement</button></div>`;
+  const nl=$("nextLvl"); if(nl) nl.onclick=()=>startLevel(n+1);
+  $("again").onclick=()=>startLevel(n); const tt=$("toTrain"); if(tt) tt.onclick=()=>start("tout");
+  ($("nextLvl")||$("again")).focus();
+}
 function show(){
   const b=S.queue[S.i];
   S.hints=0; S.errors=0; S.locked=false;
   setActive(b.id);
   canvas.setAttribute("aria-label",`${REGION_LABEL[b.region]} en 3D. Un os est mis en évidence : ${b.clue}`);
-  $("count").textContent=`Os ${S.i+1} / ${S.queue.length}`;
+  $("count").textContent=`${S.kind==="level"?"Niveau "+S.level+" · ":""}Os ${S.i+1} / ${S.queue.length}`;
   $("clue").textContent=b.clue;
   $("hint").textContent=""; fb("","");
   inp.value=""; inp.readOnly=false;
@@ -658,6 +750,10 @@ function fb(kind,html){ const el=$("fb"); el.className="fb"+(kind?" "+kind:""); 
 function updateStats(){ const c=t=>S.results.filter(r=>r.t===t).length; $("sOk").textContent=c("ok"); $("sHelp").textContent=c("aide"); $("sPass").textContent=c("passe"); }
 function shake(){ inp.classList.remove("shake"); void inp.offsetWidth; inp.classList.add("shake"); if(!touch) inp.focus(); }
 
+function wrongAnswer(kind,html){
+  if(S.kind==="level") return failLevel("Réponse incorrecte : "+html.replace(/<[^>]+>/g,""));
+  fb(kind,html); return shake();
+}
 function check(e){
   e && e.preventDefault();
   if(S.locked) return;
@@ -665,13 +761,12 @@ function check(e){
   if(!v){ shake(); fb("info","Tape le nom de l’os, puis Entrée."); return; }
   if(b.nAns.includes(v) || v===b.nName) return success(b);
   S.errors++;
-  if(b.nOld.includes(v)){ fb("warn",`C’est l’ancien nom. Aujourd’hui on dit <b>${b.name}</b>. Tape-le pour continuer.`); return shake(); }
-  if(b.notes && b.notes[v]){ fb("warn",b.notes[v]); return shake(); }
+  if(b.nOld.includes(v)) return wrongAnswer("warn",`C’est l’ancien nom. Aujourd’hui on dit <b>${b.name}</b>. Tape-le pour continuer.`);
+  if(b.notes && b.notes[v]) return wrongAnswer("warn",b.notes[v]);
   const other=BONES.find(o=>o.id!==b.id && o.name!==b.name && (o.nAns.includes(v)||o.nOld.includes(v)));
-  if(other){ fb("bad",`Non : « ${other.name} » est un autre os. Relis l’indice.`); return shake(); }
-  if(b.nAns.concat([b.nName]).some(a=>v.length>=4 && lev(v,a)<=2)){ fb("warn","Presque ! Vérifie l’orthographe."); return shake(); }
-  fb("bad", S.errors>=3 ? "Toujours pas. Essaie « Afficher une lettre »." : "Ce n’est pas ça. Réessaie.");
-  shake();
+  if(other) return wrongAnswer("bad",`Non : « ${other.name} » est un autre os. Relis l’indice.`);
+  if(b.nAns.concat([b.nName]).some(a=>v.length>=4 && lev(v,a)<=2)) return wrongAnswer("warn","Presque ! Vérifie l’orthographe.");
+  return wrongAnswer("bad", S.errors>=3 ? "Toujours pas. Essaie « Afficher une lettre »." : "Ce n’est pas ça. Réessaie.");
 }
 
 function success(b){
@@ -680,13 +775,14 @@ function success(b){
   setFound(b.id);
   inp.value=b.name.toLowerCase(); inp.readOnly=true;
   fb("ok",`Bravo : <b>${b.name}</b>${b.old&&b.old.length?` (anciennement ${b.old[0]})`:""}.`);
-  foundBy[S.mode].add(b.id);
+  if(foundBy[S.mode]) foundBy[S.mode].add(b.id);
   if(!S.hist.some(x=>x.b.id===b.id)) S.hist.unshift({b,t:(S.hints||S.errors)?"aide":"ok"});
   updateStats(); updateSide(); const run=S; setTimeout(()=>{ if(S===run) next(); },1000);
 }
 
 function hint(){
   if(S.locked) return;
+  if(S.kind==="level"){ if(confirm("Une aide fait recommencer le niveau. Continuer ?")) failLevel("Tu as demandé une aide."); return; }
   const b=S.queue[S.i]; S.hints++;
   const total=[...b.name].filter(c=>c!==" ").length;
   if(S.hints>=total) return reveal();
@@ -696,6 +792,7 @@ function hint(){
 
 function reveal(){
   if(S.locked) return;
+  if(S.kind==="level"){ if(confirm("Voir la réponse fait recommencer le niveau. Continuer ?")) failLevel("Tu as demandé la réponse."); return; }
   S.locked=true;
   const b=S.queue[S.i];
   S.results.push({b,t:"passe"});
@@ -724,14 +821,16 @@ function slideSwap(fn){
 }
 /* panneau latéral : progression + historique */
 function updateSide(){
-  const total=bonesFor(S.mode).length, n=foundBy[S.mode].size;
+  const lvl=S.kind==="level", done=getDone();
+  const total=lvl?S.queue.length:bonesFor(S.mode).length, n=lvl?S.hist.length:foundBy[S.mode].size;
   $("progN").textContent=n; $("progT").textContent=total; $("progBar").style.width=(total?n/total*100:0)+"%";
-  $("counters").innerHTML=Object.keys(MODE_LABEL).map(m=>`<li class="${m===S.mode?"cur":""}">${MODE_LABEL[m]}<b>${foundBy[m].size} / ${bonesFor(m).length}</b></li>`).join("");
+  $("counters").innerHTML=lvl ? LEVELS.map(L=>`<li class="${L.n===S.level?"cur":""}">${L.nom}<b>${L.n<=done?"validé ✓":L.n===done+1?"à valider":"verrouillé"}</b></li>`).join("") : Object.keys(MODE_LABEL).map(m=>`<li class="${m===S.mode?"cur":""}">${MODE_LABEL[m]}<b>${foundBy[m].size} / ${bonesFor(m).length}</b></li>`).join("");
   $("hist").innerHTML=S.hist.map(x=>`<li><span class="n">${x.b.name}</span><span class="t ${x.t==="aide"?"h":""}">${x.t==="aide"?"avec aide":"1er coup"}</span></li>`).join("");
   $("histEmpty").hidden=S.hist.length>0;
 }
 
 function end(){
+  if(S.kind==="level") return winLevel();
   state.activeId=null; applyStates(); if(state.auto) overview();
   const n=S.queue.length, ok=S.results.filter(r=>r.t==="ok").length, pct=Math.round(ok/n*100);
   const record=setBest(S.mode,pct), best=getBest()[S.mode];
@@ -752,21 +851,32 @@ $("btnPass").addEventListener("click",reveal);
 document.querySelectorAll(".mode").forEach(b=>b.addEventListener("click",()=>start(b.dataset.mode)));
 buildKb(); countLabels();
 
-/* démarrage : le jeu attend le modèle */
+/* démarrage : écran de choix, puis le jeu attend le modèle */
 $("play").hidden=true;
-if(renderer){
-  resize(); requestAnimationFrame(frame);
-  loadModel().then(()=>{
-    $("loading").hidden=true; $("play").hidden=false; resize();
-    canvas.setAttribute("aria-label","Squelette humain en 3D");
-    start("squelette"); focusActive(true);
-  }).catch(err=>{
-    console.error(err); $("loading").hidden=true; const n=$("nogl"); n.hidden=false;
-    n.textContent="Impossible de charger le modèle 3D. Vérifie ta connexion puis recharge la page.";
-  });
-}else{
-  $("play").hidden=true;
+let modelOk=false;
+const modelP = renderer ? loadModel().then(()=>{ modelOk=true; $("loading").hidden=true; }).catch(err=>{
+  console.error(err); $("loading").hidden=true; const n=$("nogl"); n.hidden=false;
+  n.textContent="Impossible de charger le modèle 3D. Vérifie ta connexion puis recharge la page.";
+}) : Promise.resolve();
+if(renderer){ resize(); requestAnimationFrame(frame); }
+async function begin(kind){
+  $("launch").hidden=true; $("app").hidden=false; resize();
+  await modelP; if(!modelOk) return;
+  $("play").hidden=false; resize();
+  canvas.setAttribute("aria-label","Squelette humain en 3D");
+  if(kind==="level") startLevel(nextLevel()); else start("tout");
+  focusActive(true);
 }
+(function initLaunch(){
+  const done=getDone();
+  $("lcLevelsT").textContent = done>=5 ? "Parcours par niveaux (terminé)" : done>0 ? `Continuer au niveau ${nextLevel()}` : "Commencer par le niveau 1";
+  $("lcLevelsD").textContent = done>0 ? `Niveaux déjà validés : ${done} sur 5. Chaque niveau se réussit sans aide ni erreur.` : `${levelBones(1).length} os parmi les plus faciles. Il faut le réussir sans aide ni erreur pour débloquer le niveau 2, et ainsi de suite jusqu’aux 120 noms.`;
+  $("lvlinfo").innerHTML=LEVELS.map(L=>`<li><b>${L.nom}</b> · ${L.desc} (${levelBones(L.n).length} os)</li>`).join("");
+  $("lcLevels").addEventListener("click",()=>begin("level"));
+  $("lcTrain").addEventListener("click",()=>begin("train"));
+  $("goLevels").addEventListener("click",()=>startLevel(nextLevel()));
+  renderLevelButtons();
+})();
 </script>
 </body>
 </html>
