@@ -112,7 +112,8 @@ footer p{margin:.4em 0}
             aria-describedby="glHelp"></canvas>
     <div class="camtools" role="group" aria-label="Caméra">
       <button class="cam" id="btnFit" type="button">Recentrer sur l’os</button>
-      <button class="cam" id="btnAll" type="button">Vue d’ensemble</button>
+      <button class="cam" id="btnAll" type="button">Voir la zone</button>
+      <button class="cam" id="btnRot" type="button" aria-pressed="true">Rotation auto</button>
       <button class="cam" id="btnAuto" type="button" aria-pressed="true">Centrage auto</button>
     </div>
     <div class="loading" id="loading" role="status">
@@ -121,6 +122,7 @@ footer p{margin:.4em 0}
     </div>
     <div class="nogl" id="nogl" hidden role="alert"></div>
   </div>
+  <p class="view-name" id="zoneName" aria-live="polite" style="color:var(--ink);font-weight:700"></p>
   <p class="view-name" id="glHelp">Glisse pour tourner, molette ou pincement pour zoomer. Au clavier (zone 3D sélectionnée) : flèches pour tourner, + et − pour zoomer, 0 pour recentrer.</p>
 
   <section class="play" id="play">
@@ -141,7 +143,8 @@ footer p{margin:.4em 0}
       <summary>Comment jouer</summary>
       <ul>
         <li>L’os en blanc lumineux est à nommer. Fais tourner le squelette pour le voir sous tous les angles, puis tape son nom au clavier (physique ou à l’écran) et Entrée.</li>
-        <li>Pour les os pairs (fémur, côtes…), les deux côtés s’allument.</li>
+        <li>Seule la zone du corps concernée est affichée (crâne, colonne, thorax, bras, main, bassin, jambe, pied). Elle tourne lentement sur elle-même ; touche-la pour la faire tourner toi-même, ou coupe la rotation avec « Rotation auto ».</li>
+        <li>Pour les os pairs du crâne, du thorax et du bassin, les deux côtés s’allument. Pour les membres, c’est le côté droit.</li>
         <li>Nomenclature internationale : fibula et non péroné, patella et non rotule, ulna et non cubitus. Les anciens noms sont refusés, le jeu te donne le bon.</li>
         <li>Accents et majuscules facultatifs. Une faute de frappe proche est signalée sans être validée.</li>
         <li>Les os trouvés restent teintés en vert. Séries Main et Pied : il s’agit de la main droite et du pied droit.</li>
@@ -224,6 +227,19 @@ const BONES = [
  {id:"cuneLat",name:"Cunéiforme latéral",ans:["cuneiforme lateral"],old:["troisieme cuneiforme","3e cuneiforme","3eme cuneiforme","3 cuneiforme","moyen cuneiforme"],clue:"Tarse : le plus latéral des trois, contre le cuboïde."}
 ];
 BONES.forEach(b=>{ b.view = Object.keys(SERIES).find(k=>SERIES[k].includes(b.id)); });
+/* zone du corps affichée seule pour chaque os */
+const REGION_OF={};
+Object.entries({
+  crane:["frontal","parietal","temporal","nasal","zygomatique","maxillaire","mandibule"],
+  rachis:["cervicales","vthor","lombaires","sacrum","coccyx"],
+  thorax:["clavicule","scapula","sternum","cotes"],
+  bras:["humerus","radius","ulna"],
+  main:["carpe","metacarpiens","phalangesM","scaphoide","lunatum","triquetrum","pisiforme","trapeze","trapezoide","capitatum","hamatum"],
+  bassin:["coxal"],
+  jambe:["femur","patella","tibia","fibula"],
+  pied:["tarse","metatarsiens","phalangesP","talus","calcaneus","naviculaire","cuboide","cuneMed","cuneInt","cuneLat"]
+}).forEach(([r,l])=>l.forEach(id=>REGION_OF[id]=r));
+BONES.forEach(b=>{ b.region=REGION_OF[b.id]; });
 
 /* ---------- Normalisation et comparaison ---------- */
 function norm(s){
@@ -242,7 +258,8 @@ BONES.forEach(b=>{ b.nAns=b.ans.map(norm); b.nOld=(b.old||[]).map(norm); b.nName
 const $=id=>document.getElementById(id);
 const reduce = matchMedia("(prefers-reduced-motion: reduce)");
 const canvas=$("gl"), stage=$("stage");
-const state = { states:new Map(), meshes:new Map(), groups:{}, ready:false, auto:true, activeId:null, glow:[] };
+const state = { states:new Map(), meshes:new Map(), groups:{}, regionSets:{}, spheres:{}, region:null, ready:false, auto:true, rot:!reduce.matches, activeId:null, glow:[] };
+const REGION_LABEL = {crane:"Crâne",rachis:"Colonne vertébrale",thorax:"Thorax et ceinture scapulaire",bras:"Membre supérieur droit (bras et avant-bras)",main:"Main droite",bassin:"Bassin",jambe:"Membre inférieur droit (cuisse et jambe)",pied:"Pied droit"};
 
 let renderer;
 try{
@@ -301,8 +318,9 @@ new ResizeObserver(resize).observe(stage);
 
 /* chargement du modèle */
 async function loadModel(){
-  const [bones]=await Promise.all([fetch("assets/bones.json").then(r=>r.json())]);
+  const [bones,regions]=await Promise.all([fetch("assets/bones.json").then(r=>r.json()),fetch("assets/regions.json").then(r=>r.json())]);
   state.groups=bones;
+  for(const [k,v] of Object.entries(regions)) state.regionSets[k]=new Set(v.ids);
   const loader=new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
   const gltf=await new Promise((res,rej)=>loader.load("assets/skeleton.glb",res,e=>{
     if(e.lengthComputable){ const p=Math.round(e.loaded/e.total*100); $("loadBar").style.width=p+"%"; $("loadTxt").textContent=`Chargement du squelette 3D… ${p} %`; }
@@ -315,7 +333,22 @@ async function loadModel(){
 }
 
 /* états -> matériaux */
-function meshesOf(id){ return (state.groups[id]||[]).map(f=>state.meshes.get(f)).filter(Boolean); }
+function meshesOf(id){ const set=state.regionSets[REGION_OF[id]]; return (state.groups[id]||[]).filter(f=>!set||set.has(f)).map(f=>state.meshes.get(f)).filter(Boolean); }
+function regionSphere(r){
+  if(!state.spheres[r]){ const ms=[...state.regionSets[r]].map(f=>state.meshes.get(f)).filter(Boolean); state.spheres[r]=groupSphere(ms); }
+  return state.spheres[r];
+}
+/* n'affiche que la zone concernée, cadrée d'office, vue de face */
+function setRegion(r){
+  if(state.region===r) return false;
+  state.region=r; const set=state.regionSets[r];
+  for(const [name,m] of state.meshes) m.visible=set.has(name);
+  $("zoneName").textContent="Zone affichée : "+REGION_LABEL[r];
+  const s=regionSphere(r), d=distFor(s.radius);
+  controls.target.copy(s.center);
+  camera.position.copy(s.center).add(new THREE.Vector3(0,0.12,1).normalize().multiplyScalar(d));
+  controls.update(); anim=null; dirty=true; return true;
+}
 function applyStates(){
   const rank={idle:0,found:1,active:2}; const best=new Map();
   for(const m of new Set(state.meshes.values())) best.set(m,"idle");
@@ -346,11 +379,20 @@ function flyTo(center,dist,instant){
 }
 function distFor(radius){
   const vf=THREE.MathUtils.degToRad(camera.fov)/2, hf=Math.atan(Math.tan(vf)*camera.aspect);
-  return Math.max(0.1, radius/Math.sin(Math.min(vf,hf))*1.2);
+  return Math.max(0.1, radius/Math.sin(Math.min(vf,hf))*1.08);
 }
-function focusActive(instant){ if(!state.ready||!state.activeId) return; const s=groupSphere(meshesOf(state.activeId)); flyTo(s.center,distFor(s.radius),instant); }
-function overview(){ flyTo(new THREE.Vector3(0,0.9,0),distFor(1.0),false); }
-function setActive(id){ state.activeId=id; for(const [k,v] of state.states) if(v==="active") state.states.set(k,"idle"); if(id) state.states.set(id,"active"); applyStates(); if(state.auto) focusActive(false); }
+/* cadrage : toute la zone reste visible et centrée (pas besoin de zoomer) ; léger rapprochement pour les petits os */
+function focusActive(instant){
+  if(!state.ready||!state.activeId) return;
+  const rs=regionSphere(state.region), bs=groupSphere(meshesOf(state.activeId));
+  flyTo(rs.center,distFor(rs.radius)*(bs.radius<rs.radius*0.3?0.9:1),instant);
+}
+function overview(){ if(!state.region) return; const rs=regionSphere(state.region); flyTo(rs.center,distFor(rs.radius),false); }
+function setActive(id){
+  state.activeId=id; for(const [k,v] of state.states) if(v==="active") state.states.set(k,"idle");
+  if(id){ state.states.set(id,"active"); setRegion(REGION_OF[id]); }
+  applyStates(); if(state.auto) focusActive(false);
+}
 function setFound(id){ state.states.set(id,"found"); if(state.activeId===id) state.activeId=null; applyStates(); }
 function resetStates(){ state.states.clear(); state.activeId=null; applyStates(); }
 
@@ -364,8 +406,17 @@ function frame(now){
   if(state.glowK&&state.activeId&&!reduce.matches){ state.glowK.value=0.8+0.2*Math.sin(now/450); dirty=true; }
   if(dirty){ dirty=false; renderer.render(scene,camera); }
 }
-if(controls){ controls.addEventListener("change",()=>{ dirty=true; }); controls.addEventListener("start",()=>{ anim=null; }); }
-reduce.addEventListener("change",()=>{ if(controls) controls.enableDamping=!reduce.matches; });
+/* rotation automatique de la zone sur elle-même (désactivée si mouvement réduit) */
+let rotTimer=null;
+function syncRot(){ if(!controls) return; controls.autoRotate=state.rot; controls.autoRotateSpeed=2.2; $("btnRot").setAttribute("aria-pressed",state.rot); }
+if(controls){
+  controls.addEventListener("change",()=>{ dirty=true; });
+  controls.addEventListener("start",()=>{ anim=null; clearTimeout(rotTimer); controls.autoRotate=false; });
+  controls.addEventListener("end",()=>{ clearTimeout(rotTimer); rotTimer=setTimeout(syncRot,3500); });
+}
+reduce.addEventListener("change",()=>{ if(controls) controls.enableDamping=!reduce.matches; if(reduce.matches) state.rot=false; syncRot(); });  /* mouvement réduit : rotation coupée par défaut, mais le joueur peut l'activer lui-même */
+$("btnRot").addEventListener("click",()=>{ state.rot=!state.rot; syncRot(); });
+syncRot();
 
 /* contrôle clavier de la vue 3D (canvas focalisé) */
 canvas.addEventListener("keydown",e=>{
@@ -396,6 +447,8 @@ const touch = matchMedia("(pointer: coarse)").matches;
 if(touch) inp.setAttribute("inputmode","none"); // sur mobile, on utilise le clavier à l’écran
 function getBest(){ try{ return JSON.parse(localStorage.getItem(STORE)||"{}"); }catch(e){ return {}; } }
 function setBest(mode,val){ try{ const b=getBest(); if(b[mode]==null||val>b[mode]){ b[mode]=val; localStorage.setItem(STORE,JSON.stringify(b)); return true;} }catch(e){} return false; }
+/* les os d'une même zone se suivent (la zone ne change pas à chaque question) */
+function groupedShuffle(list){ const g={}; list.forEach(b=>(g[b.region]??=[]).push(b)); return shuffle(Object.keys(g)).flatMap(r=>shuffle(g[r])); }
 function bonesFor(mode){ return mode==="tout" ? BONES.slice() : BONES.filter(b=>b.view===mode); }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
@@ -432,7 +485,7 @@ document.addEventListener("keydown",e=>{
 function countLabels(){ document.querySelectorAll(".mode").forEach(b=>{ b.querySelector("small").textContent=bonesFor(b.dataset.mode).length; }); }
 
 function start(mode,list){
-  S={mode,queue:shuffle(list||bonesFor(mode)),i:0,results:[],hints:0,errors:0,locked:false};
+  S={mode,queue:groupedShuffle(list||bonesFor(mode)),i:0,results:[],hints:0,errors:0,locked:false};
   document.querySelectorAll(".mode").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode===mode));
   resetStates();
   $("play").hidden=false; $("end").hidden=true;
@@ -443,7 +496,7 @@ function show(){
   const b=S.queue[S.i];
   S.hints=0; S.errors=0; S.locked=false;
   setActive(b.id);
-  canvas.setAttribute("aria-label",`Squelette humain en 3D. Un os est allumé en blanc : ${b.clue}`);
+  canvas.setAttribute("aria-label",`${REGION_LABEL[b.region]} en 3D. Un os est allumé en blanc : ${b.clue}`);
   $("count").textContent=`Os ${S.i+1} / ${S.queue.length}`;
   $("clue").textContent=b.clue;
   $("hint").textContent=""; fb("","");
