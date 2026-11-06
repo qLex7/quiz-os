@@ -29,7 +29,7 @@ button,input{font:inherit;color:inherit}
 .skip{position:absolute;left:8px;top:-60px;background:var(--accent);color:var(--bg2);padding:8px 12px;border-radius:8px;z-index:20;font-weight:700}
 .skip:focus{top:8px}
 
-.wrap{max-width:980px;margin:0 auto;padding:14px 16px 24px;display:flex;flex-direction:column;align-items:center}
+.wrap{max-width:1180px;margin:0 auto;padding:14px 16px 24px;display:flex;flex-direction:column;align-items:center}
 header{width:100%;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 18px}
 h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.01em}
 .modes{display:flex;flex-wrap:wrap;gap:6px}
@@ -50,6 +50,33 @@ h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.01em}
 .cam{border:1px solid var(--key-b);background:rgba(13,20,32,.72);border-radius:10px;padding:7px 11px;cursor:pointer;font-size:.82rem;min-height:36px;backdrop-filter:blur(4px)}
 .cam:hover{border-color:var(--accent)}
 .cam[aria-pressed="true"]{background:var(--ink);color:var(--bg2)}
+.main{width:100%;display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:20px;align-items:start}
+.col{display:flex;flex-direction:column;align-items:center;min-width:0}
+.col>.stage{margin-top:8px}
+.side{margin-top:8px;border:1px solid var(--rule);border-radius:14px;padding:14px;background:rgba(13,20,32,.45);position:sticky;top:10px;max-height:calc(100vh - 20px);overflow:auto}
+.side h2{font-size:1rem;margin:0 0 6px}
+.side h3{font-size:.85rem;margin:14px 0 6px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.prog{margin:0;font-size:.95rem}
+.prog b{font-size:1.5rem}
+.bar2{height:8px;border-radius:4px;background:var(--key);overflow:hidden;margin:6px 0 10px}
+.bar2 i{display:block;height:100%;width:0;background:var(--ok);transition:width .3s}
+.counters{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.counters li{border:1px solid var(--key-b);border-radius:10px;padding:6px 9px;font-size:.82rem;color:var(--muted);background:var(--key)}
+.counters li b{display:block;color:var(--ink);font-size:1rem}
+.counters li.cur{border-color:var(--ok);color:var(--ink)}
+.hist{list-style:none;margin:0;padding:0;max-height:300px;overflow:auto}
+.hist li{display:flex;justify-content:space-between;gap:8px;padding:6px 2px;border-bottom:1px solid var(--rule);font-size:.9rem;animation:histin .35s}
+.hist li::before{content:"✓";color:var(--ok);font-weight:700;margin-right:6px}
+.hist li span.n{flex:1}
+.hist .t{font-size:.75rem;color:var(--muted);white-space:nowrap}
+.hist .t.h{color:var(--warn)}
+.empty{margin:4px 0 0;font-size:.85rem;color:var(--muted)}
+@keyframes histin{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.seg{display:flex;gap:0}
+.seg .cam{border-radius:0;flex:1;white-space:nowrap}
+.seg .cam:first-child{border-radius:10px 0 0 10px}
+.seg .cam:last-child{border-radius:0 10px 10px 0;border-left:0}
+@media (max-width:900px){ .main{grid-template-columns:minmax(0,1fr)} .side{position:static;max-height:none} }
 .view-name{font-size:.82rem;color:var(--muted);margin:6px 0 0;text-align:center}
 
 .play{width:100%;max-width:640px;display:flex;flex-direction:column;align-items:center}
@@ -89,8 +116,8 @@ footer{width:100%;max-width:760px;margin-top:28px;padding-top:14px;border-top:1p
 footer a{color:var(--accent)}
 footer p{margin:.4em 0}
 [hidden]{display:none!important}
-@media (max-width:600px){ .camtools{flex-direction:row;top:auto;bottom:8px;left:8px;right:8px;justify-content:center;flex-wrap:wrap} .cam{padding:5px 9px;font-size:.78rem;min-height:36px} .stage{height:46vh} .k{height:42px;font-size:.98rem} .kb .r{gap:4px} }
-@media (prefers-reduced-motion:reduce){ .shake{animation:none} .bar i{transition:none} }
+@media (max-width:600px){ .seg{flex:1 1 100%} .camtools{flex-direction:row;top:auto;bottom:8px;left:8px;right:8px;justify-content:center;flex-wrap:wrap} .cam{padding:5px 9px;font-size:.78rem;min-height:36px} .stage{height:46vh} .k{height:42px;font-size:.98rem} .kb .r{gap:4px} }
+@media (prefers-reduced-motion:reduce){ .hist li{animation:none} .bar2 i{transition:none} .shake{animation:none} .bar i{transition:none} }
 </style>
 </head>
 <body>
@@ -100,6 +127,7 @@ footer p{margin:.4em 0}
     <h1>Quel est cet os ?</h1>
     <div class="modes" role="group" aria-label="Choisir une série">
       <button class="mode" data-mode="squelette" aria-pressed="true">Squelette<small></small></button>
+      <button class="mode" data-mode="crane" aria-pressed="false">Crâne<small></small></button>
       <button class="mode" data-mode="main" aria-pressed="false">Main<small></small></button>
       <button class="mode" data-mode="pied" aria-pressed="false">Pied<small></small></button>
       <button class="mode" data-mode="tout" aria-pressed="false">Tout<small></small></button>
@@ -107,13 +135,19 @@ footer p{margin:.4em 0}
     <div class="stats" aria-live="off"><span><b id="sOk">0</b> du 1er coup</span><span><b id="sHelp">0</b> aidés</span><span><b id="sPass">0</b> révélés</span></div>
   </header>
 
+  <div class="main"><div class="col">
   <div class="stage" id="stage">
     <canvas id="gl" tabindex="0" role="img" aria-label="Squelette humain en 3D, en cours de chargement"
             aria-describedby="glHelp"></canvas>
-    <div class="camtools" role="group" aria-label="Caméra">
+    <div class="camtools" role="group" aria-label="Caméra et affichage">
+      <div class="seg" role="group" aria-label="Type de vue">
+        <button class="cam" id="vXray" type="button" aria-pressed="true">Rayons X</button>
+        <button class="cam" id="vNorm" type="button" aria-pressed="false">Normale</button>
+      </div>
       <button class="cam" id="btnFit" type="button">Recentrer sur l’os</button>
       <button class="cam" id="btnAll" type="button">Voir la zone</button>
       <button class="cam" id="btnRot" type="button" aria-pressed="true">Rotation auto</button>
+      <button class="cam" id="btnSlide" type="button" aria-pressed="true">Glissement</button>
       <button class="cam" id="btnAuto" type="button" aria-pressed="true">Centrage auto</button>
     </div>
     <div class="loading" id="loading" role="status">
@@ -142,16 +176,30 @@ footer p{margin:.4em 0}
     <details class="howto">
       <summary>Comment jouer</summary>
       <ul>
+        <li>Deux vues : « Rayons X » (os translucides, comme un scanner) et « Normale » (os pleins, éclairés). Le choix est gardé.</li>
+        <li>À chaque bonne réponse, la vue glisse vers la gauche et la zone suivante arrive de la droite (bouton « Glissement » pour l’activer ou le couper ; coupé par défaut si ton système demande de réduire les animations). La liste « Os trouvés » garde ton historique.</li>
         <li>L’os en blanc lumineux est à nommer. Fais tourner le squelette pour le voir sous tous les angles, puis tape son nom au clavier (physique ou à l’écran) et Entrée.</li>
         <li>Seule la zone du corps concernée est affichée (crâne, colonne, thorax, bras, main, bassin, jambe, pied). Elle tourne lentement sur elle-même ; touche-la pour la faire tourner toi-même, ou coupe la rotation avec « Rotation auto ».</li>
-        <li>Pour les os pairs du crâne, du thorax et du bassin, les deux côtés s’allument. Pour les membres, c’est le côté droit.</li>
+        <li>Les 206 os du corps humain sont à retrouver, sous 120 noms : un os pair (pariétal, côte, fémur…) n’a qu’un nom. Il s’allume des deux côtés pour le crâne, le thorax et le bassin, et du côté droit pour les membres.</li>
+        <li>Côtes, vertèbres, métacarpiens… : tape le numéro (« côte 5 », « C3 », « métacarpien II », « phalange distale du gros orteil »). Le pavé de chiffres est au clavier à l’écran.</li>
         <li>Nomenclature internationale : fibula et non péroné, patella et non rotule, ulna et non cubitus. Les anciens noms sont refusés, le jeu te donne le bon.</li>
         <li>Accents et majuscules facultatifs. Une faute de frappe proche est signalée sans être validée.</li>
-        <li>Les os trouvés restent teintés en vert. Séries Main et Pied : il s’agit de la main droite et du pied droit.</li>
+        <li>Les os trouvés passent au vert. Séries Main et Pied : il s’agit de la main droite et du pied droit. L’ordre des os est tiré au hasard à chaque nouvelle partie.</li>
       </ul>
     </details>
   </section>
   <section class="end" id="end" hidden aria-live="polite"></section>
+  </div>
+  <aside class="side" aria-labelledby="sideTitle">
+    <h2 id="sideTitle">Os trouvés</h2>
+    <p class="prog" id="prog" aria-live="polite"><b id="progN">0</b> / <span id="progT">0</span> dans cette série</p>
+    <div class="bar2" aria-hidden="true"><i id="progBar"></i></div>
+    <ul class="counters" id="counters" aria-label="Progression par série"></ul>
+    <h3>Historique</h3>
+    <ol class="hist" id="hist" aria-label="Os trouvés, du plus récent au plus ancien"></ol>
+    <p class="empty" id="histEmpty">Aucun os trouvé pour l’instant.</p>
+  </aside>
+  </div>
 
   <footer>
     <p><strong>Crédits.</strong> Modèles 3D : <a href="https://lifesciencedb.jp/bp3d/" target="_blank" rel="noopener">BodyParts3D</a>, © The Database Center for Life Science, sous licence
@@ -159,6 +207,7 @@ footer p{margin:.4em 0}
       Mitsuhashi N. et al., <em>Nucleic Acids Res.</em> 2009, <a href="https://doi.org/10.1093/nar/gkn613" target="_blank" rel="noopener">doi:10.1093/nar/gkn613</a>.</p>
     <p>Modifications : os sélectionnés, maillages simplifiés, convertis en GLB compressé (Meshopt), repère réorienté. Le coccyx, fusionné au sacrum dans la source, a été isolé par une coupe approximative.
       Ces modèles dérivés restent sous la même licence CC BY-SA 2.1 Japon.</p>
+    <p><strong>Compléments :</strong> osselets de l’oreille et coccyx issus de <a href="https://www.z-anatomy.com/" target="_blank" rel="noopener">Z-Anatomy</a> (licence <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" target="_blank" rel="noopener">CC BY-SA 4.0</a>), eux-mêmes dérivés de BodyParts3D.</p>
     <p>Moteur 3D : <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> (licence MIT). Police : Atkinson Hyperlegible (SIL OFL). Termes : Terminologia Anatomica.</p>
   </footer>
 </div>
@@ -169,77 +218,138 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { MeshoptDecoder } from "three/addons/libs/meshopt_decoder.module.js";
 
-/* ---------- Données : nomenclature anatomique internationale (Terminologia Anatomica, version française) ---------- */
-const SERIES = {
-  squelette:["frontal","parietal","temporal","nasal","zygomatique","maxillaire","mandibule","cervicales","vthor","lombaires","sacrum","coccyx","clavicule","scapula","sternum","cotes","humerus","radius","ulna","carpe","metacarpiens","phalangesM","coxal","femur","patella","tibia","fibula","tarse","metatarsiens","phalangesP"],
-  main:["scaphoide","lunatum","triquetrum","pisiforme","trapeze","trapezoide","capitatum","hamatum"],
-  pied:["talus","calcaneus","naviculaire","cuboide","cuneMed","cuneInt","cuneLat"]
-};
+/* ---------- Données : nomenclature anatomique internationale (Terminologia Anatomica, version française) ----------
+   120 noms d'os = les 206 os du corps humain (les os pairs sont comptés une fois : ils s'allument des deux côtés
+   pour le crâne, le thorax et le bassin, du côté droit pour les membres). Aucun doublon. */
+const ROMAN=["i","ii","iii","iv","v","vi","vii","viii","ix","x","xi","xii"];
+const ORDF=["premier","deuxieme","troisieme","quatrieme","cinquieme","sixieme","septieme","huitieme","neuvieme","dixieme","onzieme","douzieme"];
+const ORDM=["1er","2e","3e","4e","5e","6e","7e","8e","9e","10e","11e","12e"];
+const numForms=n=>[String(n),ROMAN[n-1],ORDM[n-1],ORDM[n-1].replace(/^(\d+)e$/,"$1eme"),ORDF[n-1],...(n===2?["second"]:[])].filter((v,i,a)=>a.indexOf(v)===i);
+const ORDF_FEM=["première","deuxième","troisième","quatrième","cinquième","sixième","septième","huitième","neuvième","dixième","onzième","douzième"];
+const ORDX=["premier","deuxième","troisième","quatrième","cinquième"];
+const BONES=[];
+const add=(id,name,region,ans,clue,extra={})=>BONES.push({id,name,region,ans,clue,...extra});
 
-const BONES = [
- // Squelette
- {id:"frontal",name:"Os frontal",ans:["frontal"],clue:"Crâne : forme le front et le haut des orbites."},
- {id:"parietal",name:"Os pariétal",ans:["parietal","parietaux"],clue:"Crâne : voûte, sur les côtés et le dessus de la tête (pair)."},
- {id:"temporal",name:"Os temporal",ans:["temporal","temporaux"],clue:"Crâne : au niveau de la tempe et de l’oreille (pair)."},
- {id:"nasal",name:"Os nasal",ans:["nasal","nasaux"],old:["propre du nez","propres du nez"],clue:"Face : petite lame à la racine du nez."},
- {id:"zygomatique",name:"Os zygomatique",ans:["zygomatique","zygomatiques"],old:["malaire","de la pommette","pommette"],clue:"Face : forme la pommette (pair)."},
- {id:"maxillaire",name:"Maxillaire",ans:["maxillaire","maxillaires"],old:["maxillaire superieur"],clue:"Face : mâchoire supérieure, porte les dents du haut."},
- {id:"mandibule",name:"Mandibule",ans:["mandibule"],old:["maxillaire inferieur","machoire inferieure"],clue:"Face : mâchoire inférieure, seul os mobile de la tête."},
- {id:"cervicales",name:"Vertèbres cervicales",ans:["vertebres cervicales","vertebre cervicale","cervicales"],clue:"Rachis : les 7 vertèbres du cou."},
- {id:"vthor",name:"Vertèbres thoraciques",ans:["vertebres thoraciques","vertebre thoracique","thoraciques"],old:["vertebres dorsales","vertebre dorsale","dorsales"],clue:"Rachis : les 12 vertèbres qui portent les côtes."},
- {id:"lombaires",name:"Vertèbres lombaires",ans:["vertebres lombaires","vertebre lombaire","lombaires"],clue:"Rachis : les 5 grosses vertèbres du bas du dos."},
- {id:"sacrum",name:"Sacrum",ans:["sacrum"],clue:"Rachis : 5 vertèbres soudées entre les deux hanches."},
- {id:"coccyx",name:"Coccyx",ans:["coccyx"],clue:"Rachis : extrémité inférieure de la colonne."},
- {id:"clavicule",name:"Clavicule",ans:["clavicule","clavicules"],clue:"Ceinture scapulaire : relie le sternum à l’épaule."},
- {id:"scapula",name:"Scapula",ans:["scapula","scapulas"],old:["omoplate","omoplates"],clue:"Ceinture scapulaire : os plat triangulaire, à l’arrière du thorax."},
- {id:"sternum",name:"Sternum",ans:["sternum"],clue:"Thorax : os plat au milieu de la poitrine."},
- {id:"cotes",name:"Côtes",ans:["cotes","cote"],clue:"Thorax : 12 paires, forment la cage thoracique."},
- {id:"humerus",name:"Humérus",ans:["humerus"],clue:"Membre supérieur : os du bras, entre épaule et coude."},
- {id:"radius",name:"Radius",ans:["radius"],clue:"Avant-bras : os latéral, côté pouce."},
- {id:"ulna",name:"Ulna",ans:["ulna","ulnas"],old:["cubitus"],clue:"Avant-bras : os médial, côté auriculaire."},
- {id:"carpe",name:"Carpe",ans:["carpe","du carpe","carpiens"],clue:"Membre supérieur : ensemble des 8 petits os du poignet."},
- {id:"metacarpiens",name:"Métacarpiens",ans:["metacarpiens","metacarpien","metacarpe","du metacarpe"],clue:"Main : les 5 os longs de la paume."},
- {id:"phalangesM",name:"Phalanges",ans:["phalanges","phalange","phalanges de la main","phalanges des doigts"],clue:"Main : os des doigts."},
- {id:"coxal",name:"Os coxal",ans:["coxal","coxaux"],old:["iliaque","iliaques","de la hanche"],notes:{"ilium":"L’ilium n’est qu’une partie de cet os (avec l’ischium et le pubis). Nomme l’os entier.","bassin":"Le bassin (pelvis) regroupe plusieurs os. Nomme cet os précis.","pelvis":"Le pelvis regroupe plusieurs os. Nomme cet os précis."},clue:"Ceinture pelvienne : os de la hanche (pair)."},
- {id:"femur",name:"Fémur",ans:["femur","femurs"],clue:"Membre inférieur : os de la cuisse, le plus long du corps."},
- {id:"patella",name:"Patella",ans:["patella","patellas"],old:["rotule","rotules"],clue:"Genou : petit os sésamoïde devant l’articulation."},
- {id:"tibia",name:"Tibia",ans:["tibia","tibias"],clue:"Jambe : os médial, porte le poids du corps."},
- {id:"fibula",name:"Fibula",ans:["fibula","fibulas"],old:["perone","perones"],clue:"Jambe : os fin et latéral."},
- {id:"tarse",name:"Tarse",ans:["tarse","du tarse","tarsiens"],clue:"Pied : ensemble des 7 os de la cheville et de l’arrière du pied."},
- {id:"metatarsiens",name:"Métatarsiens",ans:["metatarsiens","metatarsien","metatarse","du metatarse"],clue:"Pied : les 5 os longs entre tarse et orteils."},
- {id:"phalangesP",name:"Phalanges",ans:["phalanges","phalange","phalanges du pied","phalanges des orteils"],clue:"Pied : os des orteils."},
- // Main
- {id:"scaphoide",name:"Scaphoïde",ans:["scaphoide"],clue:"Carpe, rangée proximale : côté pouce, contre le radius."},
- {id:"lunatum",name:"Lunatum",ans:["lunatum"],old:["semi lunaire","semilunaire"],clue:"Carpe, rangée proximale : en forme de croissant, au centre."},
- {id:"triquetrum",name:"Triquetrum",ans:["triquetrum"],old:["pyramidal"],clue:"Carpe, rangée proximale : côté auriculaire."},
- {id:"pisiforme",name:"Pisiforme",ans:["pisiforme"],clue:"Carpe : petit os en forme de pois, posé sur le triquetrum."},
- {id:"trapeze",name:"Trapèze",ans:["trapeze"],clue:"Carpe, rangée distale : sous le pouce."},
- {id:"trapezoide",name:"Trapézoïde",ans:["trapezoide"],clue:"Carpe, rangée distale : sous l’index."},
- {id:"capitatum",name:"Capitatum",ans:["capitatum"],old:["grand os"],clue:"Carpe, rangée distale : le plus gros, sous le majeur."},
- {id:"hamatum",name:"Hamatum",ans:["hamatum"],old:["crochu","unciforme"],clue:"Carpe, rangée distale : porte un crochet, côté auriculaire."},
- // Pied
- {id:"talus",name:"Talus",ans:["talus"],old:["astragale"],clue:"Tarse : articulé avec le tibia et la fibula, sur le calcanéus."},
- {id:"calcaneus",name:"Calcanéus",ans:["calcaneus"],old:["calcaneum"],clue:"Tarse : os du talon, le plus gros du pied."},
- {id:"naviculaire",name:"Naviculaire",ans:["naviculaire"],old:["scaphoide","scaphoide tarsien"],clue:"Tarse : en forme de barque, devant la tête du talus."},
- {id:"cuboide",name:"Cuboïde",ans:["cuboide"],clue:"Tarse : bord latéral du pied, devant le calcanéus."},
- {id:"cuneMed",name:"Cunéiforme médial",ans:["cuneiforme medial"],old:["premier cuneiforme","1er cuneiforme","1 cuneiforme","grand cuneiforme"],clue:"Tarse : le plus médial des trois, sous le gros orteil."},
- {id:"cuneInt",name:"Cunéiforme intermédiaire",ans:["cuneiforme intermediaire"],old:["deuxieme cuneiforme","2e cuneiforme","2eme cuneiforme","2 cuneiforme","petit cuneiforme"],clue:"Tarse : le cunéiforme du milieu, le plus petit."},
- {id:"cuneLat",name:"Cunéiforme latéral",ans:["cuneiforme lateral"],old:["troisieme cuneiforme","3e cuneiforme","3eme cuneiforme","3 cuneiforme","moyen cuneiforme"],clue:"Tarse : le plus latéral des trois, contre le cuboïde."}
+// --- Crâne et tête
+add("frontal","Os frontal","crane",["frontal"],"Crâne : forme le front et le haut des orbites.");
+add("parietal","Os pariétal","crane",["parietal","parietaux"],"Crâne : voûte, sur les côtés et le dessus de la tête (pair).");
+add("temporal","Os temporal","crane",["temporal","temporaux"],"Crâne : au niveau de la tempe et de l’oreille (pair).");
+add("occipital","Os occipital","crane",["occipital"],"Crâne : forme l’arrière et la base du crâne, troué par le foramen magnum.");
+add("sphenoide","Os sphénoïde","crane",["sphenoide"],"Crâne : os médian en forme de papillon, au centre de la base du crâne.");
+add("ethmoide","Os ethmoïde","crane",["ethmoide"],"Crâne : entre les orbites et derrière le nez, avec la lame criblée.");
+add("nasal","Os nasal","crane",["nasal","nasaux"],"Face : petite lame à la racine du nez (pair).",{old:["propre du nez","propres du nez"]});
+add("maxillaire","Maxillaire","crane",["maxillaire","maxillaires"],"Face : mâchoire supérieure, porte les dents du haut.",{old:["maxillaire superieur"]});
+add("zygomatique","Os zygomatique","crane",["zygomatique","zygomatiques"],"Face : forme la pommette (pair).",{old:["malaire","de la pommette","pommette"]});
+add("lacrimal","Os lacrimal","crane",["lacrimal","lacrymal","lacrimaux","lacrymaux"],"Face : minuscule os de la paroi interne de l’orbite (pair).",{old:["unguis"]});
+add("palatin","Os palatin","crane",["palatin","palatins"],"Face : forme l’arrière du palais osseux (pair).");
+add("cornet","Cornet nasal inférieur","crane",["cornet nasal inferieur","cornet inferieur","cornets nasaux inferieurs"],"Face : lame enroulée sur la paroi latérale de la cavité nasale (pair).",{old:["cornet nasal","cornet"]});
+add("vomer","Vomer","crane",["vomer"],"Face : lame médiane qui forme le bas de la cloison du nez.");
+add("mandibule","Mandibule","crane",["mandibule"],"Face : mâchoire inférieure, seul os mobile de la tête.",{old:["maxillaire inferieur","machoire inferieure"]});
+add("hyoide","Os hyoïde","crane",["hyoide"],"Cou : en forme de U, sous la mandibule, il ne s’articule avec aucun autre os.");
+// --- Osselets de l'oreille
+add("malleus","Malleus","osselets",["malleus"],"Oreille moyenne : premier osselet, appuyé sur le tympan.",{old:["marteau"]});
+add("incus","Incus","osselets",["incus"],"Oreille moyenne : osselet intermédiaire, entre les deux autres.",{old:["enclume"]});
+add("stapes","Stapes","osselets",["stapes"],"Oreille moyenne : le plus petit os du corps, en forme d’étrier.",{old:["etrier"]});
+
+// --- Colonne vertébrale
+const CERV_CLUE=["Rachis cervical : la 1re vertèbre, elle porte le crâne (pas de corps vertébral).","Rachis cervical : la 2e vertèbre, son apophyse en dent (dens) pivote dans l’atlas."];
+add("c1","Atlas","rachis",["atlas","c1","vertebre cervicale 1","premiere vertebre cervicale"],CERV_CLUE[0]);
+add("c2","Axis","rachis",["axis","c2","vertebre cervicale 2","deuxieme vertebre cervicale"],CERV_CLUE[1]);
+for(let n=3;n<=7;n++){
+  const f=numForms(n), ans=[`c${n}`,...f.flatMap(x=>[`vertebre cervicale ${x}`,`${x} vertebre cervicale`])];
+  if(n===7) ans.push("vertebre proeminente","proeminente");
+  add("c"+n,`Vertèbre cervicale C${n}`,"rachis",ans,n===7?"Rachis cervical : la dernière, à l’épine très saillante sous la peau (vertèbre proéminente).":`Rachis cervical : la ${ORDF_FEM[n-1]} vertèbre du cou.`);
+}
+for(let n=1;n<=12;n++){
+  const f=numForms(n), ans=[`t${n}`,`th${n}`,...f.flatMap(x=>[`vertebre thoracique ${x}`,`${x} vertebre thoracique`])];
+  add("t"+n,`Vertèbre thoracique T${n}`,"rachis",ans,`Rachis thoracique : la ${ORDF_FEM[n-1]} vertèbre, elle porte la ${ORDF_FEM[n-1]} paire de côtes.`,{old:[`d${n}`,`vertebre dorsale ${n}`,`vertebre dorsale d${n}`]});
+}
+for(let n=1;n<=5;n++){
+  const f=numForms(n), ans=[`l${n}`,...f.flatMap(x=>[`vertebre lombaire ${x}`,`${x} vertebre lombaire`])];
+  add("l"+n,`Vertèbre lombaire L${n}`,"rachis",ans,`Rachis lombaire : la ${ORDF_FEM[n-1]} des 5 grosses vertèbres du bas du dos.`);
+}
+add("sacrum","Sacrum","rachis",["sacrum"],"Rachis : 5 vertèbres soudées entre les deux hanches.");
+add("coccyx","Coccyx","rachis",["coccyx"],"Rachis : extrémité inférieure de la colonne.");
+
+// --- Thorax
+for(let n=1;n<=12;n++){
+  const f=numForms(n), ans=f.flatMap(x=>[`cote ${x}`,`${x} cote`,`cotes ${x}`]);
+  const kind=n<=7?"vraie côte, reliée directement au sternum":n<=10?"fausse côte, reliée au sternum par le cartilage de la côte au-dessus":"côte flottante, sans lien avec le sternum";
+  add("r"+n,`Côte ${n}`,"thorax",ans,`Thorax : la ${ORDF_FEM[n-1]} côte (paire), ${kind}.`);
+}
+add("sternum","Sternum","thorax",["sternum"],"Thorax : os plat au milieu de la poitrine.");
+add("clavicule","Clavicule","thorax",["clavicule","clavicules"],"Ceinture scapulaire : relie le sternum à l’épaule.");
+add("scapula","Scapula","thorax",["scapula","scapulas"],"Ceinture scapulaire : os plat triangulaire, à l’arrière du thorax.",{old:["omoplate","omoplates"]});
+
+// --- Membre supérieur
+add("humerus","Humérus","bras",["humerus"],"Membre supérieur : os du bras, entre épaule et coude.");
+add("radius","Radius","bras",["radius"],"Avant-bras : os latéral, côté pouce.");
+add("ulna","Ulna","bras",["ulna","ulnas"],"Avant-bras : os médial, côté auriculaire.",{old:["cubitus"]});
+add("scaphoide","Scaphoïde","main",["scaphoide"],"Carpe, rangée proximale : côté pouce, contre le radius.");
+add("lunatum","Lunatum","main",["lunatum"],"Carpe, rangée proximale : en forme de croissant, au centre.",{old:["semi lunaire","semilunaire"]});
+add("triquetrum","Triquetrum","main",["triquetrum"],"Carpe, rangée proximale : côté auriculaire.",{old:["pyramidal"]});
+add("pisiforme","Pisiforme","main",["pisiforme"],"Carpe : petit os en forme de pois, posé sur le triquetrum.");
+add("trapeze","Trapèze","main",["trapeze"],"Carpe, rangée distale : sous le pouce.");
+add("trapezoide","Trapézoïde","main",["trapezoide"],"Carpe, rangée distale : sous l’index.");
+add("capitatum","Capitatum","main",["capitatum"],"Carpe, rangée distale : le plus gros, sous le majeur.",{old:["grand os"]});
+add("hamatum","Hamatum","main",["hamatum"],"Carpe, rangée distale : porte un crochet, côté auriculaire.",{old:["crochu","unciforme"]});
+const DOIGTS=[
+  {k:"pouce",   nom:"du pouce",          v:["du pouce","pouce","de pouce"],           suf:"du pouce"},
+  {k:"index",   nom:"de l’index",        v:["de l'index","de l index","index","du index"],      suf:"de l’index"},
+  {k:"majeur",  nom:"du majeur",         v:["du majeur","majeur","du medius","medius"],         suf:"du majeur"},
+  {k:"annulaire",nom:"de l’annulaire",   v:["de l'annulaire","de l annulaire","annulaire"],     suf:"de l’annulaire"},
+  {k:"auriculaire",nom:"de l’auriculaire",v:["de l'auriculaire","de l auriculaire","auriculaire","du petit doigt","petit doigt"],suf:"de l’auriculaire"}
 ];
-BONES.forEach(b=>{ b.view = Object.keys(SERIES).find(k=>SERIES[k].includes(b.id)); });
-/* zone du corps affichée seule pour chaque os */
-const REGION_OF={};
-Object.entries({
-  crane:["frontal","parietal","temporal","nasal","zygomatique","maxillaire","mandibule"],
-  rachis:["cervicales","vthor","lombaires","sacrum","coccyx"],
-  thorax:["clavicule","scapula","sternum","cotes"],
-  bras:["humerus","radius","ulna"],
-  main:["carpe","metacarpiens","phalangesM","scaphoide","lunatum","triquetrum","pisiforme","trapeze","trapezoide","capitatum","hamatum"],
-  bassin:["coxal"],
-  jambe:["femur","patella","tibia","fibula"],
-  pied:["tarse","metatarsiens","phalangesP","talus","calcaneus","naviculaire","cuboide","cuneMed","cuneInt","cuneLat"]
-}).forEach(([r,l])=>l.forEach(id=>REGION_OF[id]=r));
-BONES.forEach(b=>{ b.region=REGION_OF[b.id]; });
+for(let i=0;i<5;i++){ const n=i+1, f=numForms(n);
+  add("mc"+n,`Métacarpien ${ROMAN[i].toUpperCase()}`,"main",f.flatMap(x=>[`metacarpien ${x}`,`${x} metacarpien`]),`Main : le ${ORDX[i]} os long de la paume, ${["côté pouce","côté index","au centre, côté majeur","côté annulaire","côté auriculaire"][i]}.`);
+}
+const SEG=[["p","proximale","proximale","la plus proche de la paume","premiere"],["m","moyenne","moyenne","au milieu","deuxieme"],["d","distale","distale","au bout du doigt, sous l’ongle","troisieme"]];
+DOIGTS.forEach((d,i)=>SEG.forEach(([s,adj,,pos,ord])=>{
+  if(i===0&&s==="m") return;
+  const oldSeg=s==="m"?["phalangine"]:s==="d"?["phalangette"]:[];
+  const ans=[],old=[];
+  d.v.forEach(x=>{ ans.push(`phalange ${adj} ${x}`,`phalange ${adj} ${x.replace(/^(du|de l'|de l |de )/,"")}`); old.push(`${ord} phalange ${x}`); oldSeg.forEach(o=>old.push(`${o} ${x}`)); });
+  add(`ph_${d.k}_${s}`,`Phalange ${adj} ${d.nom}`,"main",ans,`Main, ${d.k==="pouce"?"pouce":"doigt « "+d.k+" »"} : phalange ${adj}, ${pos}.`,{old});
+}));
+
+// --- Bassin et membre inférieur
+add("coxal","Os coxal","bassin",["coxal","coxaux"],"Ceinture pelvienne : os de la hanche (pair).",{old:["iliaque","iliaques","de la hanche"],notes:{"ilium":"L’ilium n’est qu’une partie de cet os (avec l’ischium et le pubis). Nomme l’os entier.","bassin":"Le bassin (pelvis) regroupe plusieurs os. Nomme cet os précis.","pelvis":"Le pelvis regroupe plusieurs os. Nomme cet os précis."}});
+add("femur","Fémur","jambe",["femur","femurs"],"Membre inférieur : os de la cuisse, le plus long du corps.");
+add("patella","Patella","jambe",["patella","patellas"],"Genou : petit os sésamoïde devant l’articulation.",{old:["rotule","rotules"]});
+add("tibia","Tibia","jambe",["tibia","tibias"],"Jambe : os médial, porte le poids du corps.");
+add("fibula","Fibula","jambe",["fibula","fibulas"],"Jambe : os fin et latéral.",{old:["perone","perones"]});
+add("talus","Talus","pied",["talus"],"Tarse : articulé avec le tibia et la fibula, sur le calcanéus.",{old:["astragale"]});
+add("calcaneus","Calcanéus","pied",["calcaneus"],"Tarse : os du talon, le plus gros du pied.",{old:["calcaneum"]});
+add("naviculaire","Naviculaire","pied",["naviculaire"],"Tarse : en forme de barque, devant la tête du talus.",{old:["scaphoide","scaphoide tarsien"]});
+add("cuboide","Cuboïde","pied",["cuboide"],"Tarse : bord latéral du pied, devant le calcanéus.");
+add("cuneMed","Cunéiforme médial","pied",["cuneiforme medial"],"Tarse : le plus médial des trois, sous le gros orteil.",{old:["premier cuneiforme","1er cuneiforme","1 cuneiforme","grand cuneiforme"]});
+add("cuneInt","Cunéiforme intermédiaire","pied",["cuneiforme intermediaire"],"Tarse : le cunéiforme du milieu, le plus petit.",{old:["deuxieme cuneiforme","2e cuneiforme","2eme cuneiforme","2 cuneiforme","petit cuneiforme"]});
+add("cuneLat","Cunéiforme latéral","pied",["cuneiforme lateral"],"Tarse : le plus latéral des trois, contre le cuboïde.",{old:["troisieme cuneiforme","3e cuneiforme","3eme cuneiforme","3 cuneiforme","moyen cuneiforme"]});
+for(let i=0;i<5;i++){ const n=i+1, f=numForms(n);
+  add("mt"+n,`Métatarsien ${ROMAN[i].toUpperCase()}`,"pied",f.flatMap(x=>[`metatarsien ${x}`,`${x} metatarsien`]),`Pied : le ${ORDX[i]} os long entre tarse et orteils${i===0?", le plus gros (gros orteil)":i===4?", côté latéral (petit orteil)":""}.`);
+}
+const ORTEILS=[
+  {k:"hallux",nom:"du gros orteil",v:["du gros orteil","gros orteil","de l'hallux","du hallux","hallux"]},
+  {k:"o2",nom:"du 2e orteil",v:["du 2e orteil","du 2eme orteil","du deuxieme orteil","du second orteil","orteil 2","du ii orteil","du 2 orteil"]},
+  {k:"o3",nom:"du 3e orteil",v:["du 3e orteil","du 3eme orteil","du troisieme orteil","orteil 3","du iii orteil","du 3 orteil"]},
+  {k:"o4",nom:"du 4e orteil",v:["du 4e orteil","du 4eme orteil","du quatrieme orteil","orteil 4","du iv orteil","du 4 orteil"]},
+  {k:"o5",nom:"du 5e orteil",v:["du 5e orteil","du 5eme orteil","du cinquieme orteil","du petit orteil","petit orteil","orteil 5","du v orteil","du 5 orteil"]}
+];
+ORTEILS.forEach((d,i)=>SEG.forEach(([s,adj,,pos,ord])=>{
+  if(i===0&&s==="m") return;
+  const ans=[],old=[]; d.v.forEach(x=>{ ans.push(`phalange ${adj} ${x}`); old.push(`${ord} phalange ${x}`); });
+  add(`ph_${d.k}_${s}`,`Phalange ${adj} ${d.nom}`,"pied",ans,`Pied, ${i===0?"gros orteil":"orteil "+(i+1)} : phalange ${adj}, ${pos.replace("du doigt","de l’orteil")}.`,{old});
+}));
+
+/* séries : Squelette = tout sauf la main et le pied */
+const SERIES = {
+  squelette:BONES.filter(b=>!["main","pied"].includes(b.region)).map(b=>b.id),
+  crane:BONES.filter(b=>b.region==="crane"&&b.id!=="hyoide").map(b=>b.id),
+  main:BONES.filter(b=>b.region==="main").map(b=>b.id),
+  pied:BONES.filter(b=>b.region==="pied").map(b=>b.id)
+};
+BONES.forEach(b=>{ b.view = ["squelette","crane","main","pied"].filter(k=>SERIES[k].includes(b.id)); });
+const REGION_OF={}; BONES.forEach(b=>REGION_OF[b.id]=b.region);
 
 /* ---------- Normalisation et comparaison ---------- */
 function norm(s){
@@ -258,8 +368,8 @@ BONES.forEach(b=>{ b.nAns=b.ans.map(norm); b.nOld=(b.old||[]).map(norm); b.nName
 const $=id=>document.getElementById(id);
 const reduce = matchMedia("(prefers-reduced-motion: reduce)");
 const canvas=$("gl"), stage=$("stage");
-const state = { states:new Map(), meshes:new Map(), groups:{}, regionSets:{}, spheres:{}, region:null, ready:false, auto:true, rot:!reduce.matches, activeId:null, glow:[] };
-const REGION_LABEL = {crane:"Crâne",rachis:"Colonne vertébrale",thorax:"Thorax et ceinture scapulaire",bras:"Membre supérieur droit (bras et avant-bras)",main:"Main droite",bassin:"Bassin",jambe:"Membre inférieur droit (cuisse et jambe)",pied:"Pied droit"};
+const state = { slide:(()=>{ try{ const v=localStorage.getItem("quiz-os-slide"); if(v!==null) return v==="1"; }catch(e){} return !reduce.matches; })(), view:(()=>{ try{ return localStorage.getItem("quiz-os-view")==="normal"?"normal":"xray"; }catch(e){ return "xray"; } })(), states:new Map(), meshes:new Map(), groups:{}, regionSets:{}, spheres:{}, region:null, ready:false, auto:true, rot:!reduce.matches, activeId:null, glow:[] };
+const REGION_LABEL = {osselets:"Osselets de l’oreille droite (marteau, enclume, étrier)",crane:"Crâne et os hyoïde",rachis:"Colonne vertébrale",thorax:"Thorax et ceinture scapulaire",bras:"Membre supérieur droit (bras et avant-bras)",main:"Main droite",bassin:"Bassin",jambe:"Membre inférieur droit (cuisse et jambe)",pied:"Pied droit"};
 
 let renderer;
 try{
@@ -271,13 +381,17 @@ try{
 }
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(35,1,0.01,40);
+scene.add(camera);
+scene.add(new THREE.HemisphereLight(0xe3ecff,0x3a4452,1.5));
+const keyLight=new THREE.DirectionalLight(0xffffff,2.4); keyLight.position.set(0.6,0.9,1); camera.add(keyLight);
+const lightTarget=new THREE.Object3D(); scene.add(lightTarget); keyLight.target=lightTarget;
 camera.position.set(0,0.9,4.2);
 let controls;
 if(renderer){
   renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
   controls=new OrbitControls(camera,canvas);
   controls.enableDamping=!reduce.matches; controls.dampingFactor=0.08;
-  controls.minDistance=0.06; controls.maxDistance=6; controls.screenSpacePanning=true;
+  controls.minDistance=0.02; controls.maxDistance=6; controls.screenSpacePanning=true;
   controls.target.set(0,0.9,0);
   controls.update();
 }
@@ -294,7 +408,7 @@ const xray=(hex,base,rim)=>new THREE.ShaderMaterial({
 });
 const MAT = {
   idle: xray("#A9C8F0",0.10,0.60),
-  found: xray("#6EE1BC",0.17,0.75),
+  found: xray("#4DE39A",0.34,0.95),
   active: new THREE.ShaderMaterial({
     vertexShader:"const float uPush=0.0;\n"+VERT,
     fragmentShader:`varying vec3 vN; varying vec3 vV;
@@ -302,6 +416,14 @@ const MAT = {
     transparent:true, depthWrite:true, depthTest:true, side:THREE.DoubleSide
   })
 };
+const MATN = {
+  idle: new THREE.MeshStandardMaterial({color:"#E8DCC3",roughness:0.72,metalness:0.02,side:THREE.DoubleSide}),
+  found: new THREE.MeshStandardMaterial({color:"#3FC57C",roughness:0.55,metalness:0.02,emissive:"#0A3A20",side:THREE.DoubleSide}),
+  active: MAT.active
+};
+const GHOST=new THREE.ShaderMaterial({ vertexShader:"const float uPush=0.0;\n"+VERT,
+  fragmentShader:"varying vec3 vN; varying vec3 vV; void main(){ gl_FragColor=vec4(vec3(1.0),0.30); }",
+  transparent:true, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide });
 const glowMat=(push)=>{ const m=new THREE.ShaderMaterial({
   uniforms:{uK:{value:1.0}},
   vertexShader:`varying vec3 vN; varying vec3 vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position+normal*${push.toFixed(5)},1.0); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
@@ -353,14 +475,16 @@ function applyStates(){
   const rank={idle:0,found:1,active:2}; const best=new Map();
   for(const m of new Set(state.meshes.values())) best.set(m,"idle");
   for(const [id,st] of state.states){ for(const m of meshesOf(id)){ if(rank[st]>rank[best.get(m)]) best.set(m,st); } }
-  for(const [m,st] of best) m.material=MAT[st];
+  const MS=state.view==="normal"?MATN:MAT;
+  for(const [m,st] of best) m.material=MS[st];
   // halo des os actifs
   state.glow.forEach(g=>{ g.parent&&g.parent.remove(g); }); state.glow=[];
   if(state.activeId){
     const ms=meshesOf(state.activeId); const r=groupSphere(ms).radius;
     const push=Math.min(0.012,Math.max(0.0012,r*0.035));
     const uK={value:1.0}; state.glowK=uK;
-    for(const m of ms){ const gm=glowMat(push/(m.scale.x||1)); gm.uniforms.uK=uK; const g=new THREE.Mesh(m.geometry,gm); g.frustumCulled=false; g.renderOrder=5; m.add(g); state.glow.push(g); }
+    for(const m of ms){ const gm=glowMat(push/(m.scale.x||1)); gm.uniforms.uK=uK; const g=new THREE.Mesh(m.geometry,gm); g.frustumCulled=false; g.renderOrder=5; m.add(g); state.glow.push(g);
+      if(state.view==="normal"){ const gh=new THREE.Mesh(m.geometry,GHOST); gh.frustumCulled=false; gh.renderOrder=6; m.add(gh); state.glow.push(gh); } }
   }
   dirty=true;
 }
@@ -379,7 +503,7 @@ function flyTo(center,dist,instant){
 }
 function distFor(radius){
   const vf=THREE.MathUtils.degToRad(camera.fov)/2, hf=Math.atan(Math.tan(vf)*camera.aspect);
-  return Math.max(0.1, radius/Math.sin(Math.min(vf,hf))*1.08);
+  return Math.max(0.03, radius/Math.sin(Math.min(vf,hf))*1.08);
 }
 /* cadrage : toute la zone reste visible et centrée (pas besoin de zoomer) ; léger rapprochement pour les petits os */
 function focusActive(instant){
@@ -402,6 +526,7 @@ function frame(now){
   if(!renderer||!state.ready) return;
   if(anim){ const k=Math.min(1,(now-anim.t0)/anim.d), e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
     camera.position.lerpVectors(anim.fp,anim.tp,e); controls.target.lerpVectors(anim.ft,anim.tt,e); if(k>=1) anim=null; dirty=true; }
+  lightTarget.position.copy(controls.target);
   if(controls.update()) dirty=true;
   if(state.glowK&&state.activeId&&!reduce.matches){ state.glowK.value=0.8+0.2*Math.sin(now/450); dirty=true; }
   if(dirty){ dirty=false; renderer.render(scene,camera); }
@@ -433,6 +558,17 @@ canvas.addEventListener("keydown",e=>{
   }
   if(used){ e.preventDefault(); e.stopPropagation(); off.setFromSpherical(sph); camera.position.copy(controls.target).add(off); controls.update(); dirty=true; }
 });
+function setView(v){
+  state.view=v; $("vXray").setAttribute("aria-pressed",v==="xray"); $("vNorm").setAttribute("aria-pressed",v==="normal");
+  try{ localStorage.setItem("quiz-os-view",v); }catch(e){}
+  if(state.ready) applyStates();
+}
+$("vXray").addEventListener("click",()=>setView("xray"));
+$("vNorm").addEventListener("click",()=>setView("normal"));
+setView(state.view);
+function syncSlide(){ $("btnSlide").setAttribute("aria-pressed",state.slide); try{ localStorage.setItem("quiz-os-slide",state.slide?"1":"0"); }catch(e){} }
+$("btnSlide").addEventListener("click",()=>{ state.slide=!state.slide; syncSlide(); });
+syncSlide();
 $("btnFit").addEventListener("click",()=>focusActive(false));
 $("btnAll").addEventListener("click",overview);
 $("btnAuto").addEventListener("click",e=>{ state.auto=!state.auto; e.currentTarget.setAttribute("aria-pressed",state.auto); if(state.auto) focusActive(false); });
@@ -447,13 +583,19 @@ const touch = matchMedia("(pointer: coarse)").matches;
 if(touch) inp.setAttribute("inputmode","none"); // sur mobile, on utilise le clavier à l’écran
 function getBest(){ try{ return JSON.parse(localStorage.getItem(STORE)||"{}"); }catch(e){ return {}; } }
 function setBest(mode,val){ try{ const b=getBest(); if(b[mode]==null||val>b[mode]){ b[mode]=val; localStorage.setItem(STORE,JSON.stringify(b)); return true;} }catch(e){} return false; }
-/* les os d'une même zone se suivent (la zone ne change pas à chaque question) */
-function groupedShuffle(list){ const g={}; list.forEach(b=>(g[b.region]??=[]).push(b)); return shuffle(Object.keys(g)).flatMap(r=>shuffle(g[r])); }
-function bonesFor(mode){ return mode==="tout" ? BONES.slice() : BONES.filter(b=>b.view===mode); }
-function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+/* ordre toujours tiré au hasard (crypto), et jamais le même premier os que la partie précédente */
+let lastFirst=null;
+function rnd(n){ const a=new Uint32Array(1); crypto.getRandomValues(a); return a[0]%n; }
+function randomOrder(list){
+  const q=shuffle(list.slice());
+  if(q.length>1 && q[0].id===lastFirst){ const j=1+rnd(q.length-1); [q[0],q[j]]=[q[j],q[0]]; }
+  lastFirst=q[0].id; return q;
+}
+function bonesFor(mode){ return mode==="tout" ? BONES.slice() : BONES.filter(b=>b.view.includes(mode)); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 /* clavier AZERTY */
-const ROWS=[["a","z","e","r","t","y","u","i","o","p"],["q","s","d","f","g","h","j","k","l","m"],["w","x","c","v","b","n","é","è","’","⌫"],["-","espace","Entrée"]];
+const ROWS=[["1","2","3","4","5","6","7","8","9","0"],["a","z","e","r","t","y","u","i","o","p"],["q","s","d","f","g","h","j","k","l","m"],["w","x","c","v","b","n","é","è","’","⌫"],["-","espace","Entrée"]];
 function buildKb(){
   $("kb").innerHTML=ROWS.map(r=>`<div class="r">${r.map(k=>{
     const cls = k==="espace"?"k w5":k==="Entrée"?"k w2 go":k==="⌫"?"k w2":"k";
@@ -484,12 +626,18 @@ document.addEventListener("keydown",e=>{
 
 function countLabels(){ document.querySelectorAll(".mode").forEach(b=>{ b.querySelector("small").textContent=bonesFor(b.dataset.mode).length; }); }
 
+const foundBy={squelette:new Set(),crane:new Set(),main:new Set(),pied:new Set(),tout:new Set()};
+const MODE_LABEL={squelette:"Squelette",crane:"Crâne",main:"Main",pied:"Pied",tout:"Tout"};
+function resetCanvasSlide(){ canvas.style.transition="none"; canvas.style.transform=""; canvas.style.opacity=""; }
 function start(mode,list){
-  S={mode,queue:groupedShuffle(list||bonesFor(mode)),i:0,results:[],hints:0,errors:0,locked:false};
+  const prevHist=(list&&S.mode===mode&&S.hist)?S.hist:[];
+  resetCanvasSlide();
+  if(!list) foundBy[mode]=new Set();
+  S={mode,queue:randomOrder(list||bonesFor(mode)),i:0,results:[],hist:prevHist,hints:0,errors:0,locked:false};
   document.querySelectorAll(".mode").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode===mode));
   resetStates();
   $("play").hidden=false; $("end").hidden=true;
-  show();
+  updateSide(); show();
 }
 
 function show(){
@@ -519,9 +667,9 @@ function check(e){
   S.errors++;
   if(b.nOld.includes(v)){ fb("warn",`C’est l’ancien nom. Aujourd’hui on dit <b>${b.name}</b>. Tape-le pour continuer.`); return shake(); }
   if(b.notes && b.notes[v]){ fb("warn",b.notes[v]); return shake(); }
-  if(b.nAns.concat([b.nName]).some(a=>v.length>=4 && lev(v,a)<=2)){ fb("warn","Presque ! Vérifie l’orthographe."); return shake(); }
   const other=BONES.find(o=>o.id!==b.id && o.name!==b.name && (o.nAns.includes(v)||o.nOld.includes(v)));
   if(other){ fb("bad",`Non : « ${other.name} » est un autre os. Relis l’indice.`); return shake(); }
+  if(b.nAns.concat([b.nName]).some(a=>v.length>=4 && lev(v,a)<=2)){ fb("warn","Presque ! Vérifie l’orthographe."); return shake(); }
   fb("bad", S.errors>=3 ? "Toujours pas. Essaie « Afficher une lettre »." : "Ce n’est pas ça. Réessaie.");
   shake();
 }
@@ -532,7 +680,9 @@ function success(b){
   setFound(b.id);
   inp.value=b.name.toLowerCase(); inp.readOnly=true;
   fb("ok",`Bravo : <b>${b.name}</b>${b.old&&b.old.length?` (anciennement ${b.old[0]})`:""}.`);
-  updateStats(); setTimeout(next,1100);
+  foundBy[S.mode].add(b.id);
+  if(!S.hist.some(x=>x.b.id===b.id)) S.hist.unshift({b,t:(S.hints||S.errors)?"aide":"ok"});
+  updateStats(); updateSide(); const run=S; setTimeout(()=>{ if(S===run) next(); },1000);
 }
 
 function hint(){
@@ -553,10 +703,33 @@ function reveal(){
   fb("info",`Réponse : <b>${b.name}</b>${b.old&&b.old.length?` (anciennement ${b.old[0]})`:""}.`);
   $("btnHint").disabled=true; $("btnPass").disabled=true;
   state.activeId=null; for(const [k,v] of state.states) if(v==="active") state.states.set(k,"idle"); applyStates();
-  updateStats(); setTimeout(next,2200);
+  updateStats(); const run=S; setTimeout(()=>{ if(S===run) next(); },2200);
 }
 
-function next(){ S.i++; if(S.i>=S.queue.length) return end(); show(); }
+function next(){
+  S.i++; if(S.i>=S.queue.length) return end();
+  slideSwap(()=>show());
+}
+/* la vue glisse vers la gauche, la zone suivante arrive de la droite */
+function slideSwap(fn){
+  if(!state.slide||!state.ready){ fn(); return; }
+  const run=S;
+  canvas.style.transition="transform .38s cubic-bezier(.5,0,.85,.4), opacity .38s"; canvas.style.transform="translateX(-108%)"; canvas.style.opacity="0";
+  setTimeout(()=>{
+    if(S!==run) return;
+    canvas.style.transition="none"; canvas.style.transform="translateX(108%)";
+    fn(); void canvas.offsetWidth;
+    canvas.style.transition="transform .5s cubic-bezier(.2,.8,.2,1), opacity .4s"; canvas.style.transform="translateX(0)"; canvas.style.opacity="1";
+  },400);
+}
+/* panneau latéral : progression + historique */
+function updateSide(){
+  const total=bonesFor(S.mode).length, n=foundBy[S.mode].size;
+  $("progN").textContent=n; $("progT").textContent=total; $("progBar").style.width=(total?n/total*100:0)+"%";
+  $("counters").innerHTML=Object.keys(MODE_LABEL).map(m=>`<li class="${m===S.mode?"cur":""}">${MODE_LABEL[m]}<b>${foundBy[m].size} / ${bonesFor(m).length}</b></li>`).join("");
+  $("hist").innerHTML=S.hist.map(x=>`<li><span class="n">${x.b.name}</span><span class="t ${x.t==="aide"?"h":""}">${x.t==="aide"?"avec aide":"1er coup"}</span></li>`).join("");
+  $("histEmpty").hidden=S.hist.length>0;
+}
 
 function end(){
   state.activeId=null; applyStates(); if(state.auto) overview();

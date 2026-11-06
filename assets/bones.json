@@ -10,56 +10,190 @@
   "FMA52738",
   "FMA52739"
  ],
+ "occipital": [
+  "FMA52735"
+ ],
+ "sphenoide": [
+  "FMA52736"
+ ],
+ "ethmoide": [
+  "FMA52740"
+ ],
  "nasal": [
   "FMA53647",
   "FMA53648"
- ],
- "zygomatique": [
-  "FMA52892",
-  "FMA52893"
  ],
  "maxillaire": [
   "FMA53649",
   "FMA53650"
  ],
+ "zygomatique": [
+  "FMA52892",
+  "FMA52893"
+ ],
+ "lacrimal": [
+  "FMA53645",
+  "FMA53646"
+ ],
+ "palatin": [
+  "FMA53655",
+  "FMA53656"
+ ],
+ "cornet": [
+  "FMA54737",
+  "FMA54738"
+ ],
+ "vomer": [
+  "FMA9710"
+ ],
  "mandibule": [
   "FMA52748"
  ],
- "cervicales": [
-  "FMA12519",
-  "FMA12520",
-  "FMA12521",
-  "FMA12522",
-  "FMA12523",
-  "FMA12524",
+ "hyoide": [
+  "FMA52749"
+ ],
+ "malleus": [
+  "ZA_malleus_r",
+  "ZA_malleus_l"
+ ],
+ "incus": [
+  "ZA_incus_r",
+  "ZA_incus_l"
+ ],
+ "stapes": [
+  "ZA_stapes_r",
+  "ZA_stapes_l"
+ ],
+ "c1": [
+  "FMA12519"
+ ],
+ "c2": [
+  "FMA12520"
+ ],
+ "c3": [
+  "FMA12521"
+ ],
+ "c4": [
+  "FMA12522"
+ ],
+ "c5": [
+  "FMA12523"
+ ],
+ "c6": [
+  "FMA12524"
+ ],
+ "c7": [
   "FMA12525"
  ],
- "vthor": [
-  "FMA9165",
-  "FMA9187",
-  "FMA9209",
-  "FMA9248",
-  "FMA9922",
-  "FMA9945",
-  "FMA9968",
-  "FMA9991",
-  "FMA10014",
-  "FMA10037",
-  "FMA10059",
+ "t1": [
+  "FMA9165"
+ ],
+ "t2": [
+  "FMA9187"
+ ],
+ "t3": [
+  "FMA9209"
+ ],
+ "t4": [
+  "FMA9248"
+ ],
+ "t5": [
+  "FMA9922"
+ ],
+ "t6": [
+  "FMA9945"
+ ],
+ "t7": [
+  "FMA9968"
+ ],
+ "t8": [
+  "FMA9991"
+ ],
+ "t9": [
+  "FMA10014"
+ ],
+ "t10": [
+  "FMA10037"
+ ],
+ "t11": [
+  "FMA10059"
+ ],
+ "t12": [
   "FMA10081"
  ],
- "lombaires": [
-  "FMA13072",
-  "FMA13073",
-  "FMA13074",
-  "FMA13075",
+ "l1": [
+  "FMA13072"
+ ],
+ "l2": [
+  "FMA13073"
+ ],
+ "l3": [
+  "FMA13074"
+ ],
+ "l4": [
+  "FMA13075"
+ ],
+ "l5": [
   "FMA13076"
  ],
  "sacrum": [
   "FMA16202"
  ],
  "coccyx": [
-  "COCCYX"
+  "ZA_coccyx"
+ ],
+ "r1": [
+  "FMA7857",
+  "FMA7987"
+ ],
+ "r2": [
+  "FMA7882",
+  "FMA8012"
+ ],
+ "r3": [
+  "FMA7909",
+  "FMA8039"
+ ],
+ "r4": [
+  "FMA7957",
+  "FMA8148"
+ ],
+ "r5": [
+  "FMA8066",
+  "FMA8093"
+ ],
+ "r6": [
+  "FMA8175",
+  "FMA8202"
+ ],
+ "r7": [
+  "FMA8229",
+  "FMA8256"
+ ],
+ "r8": [
+  "FMA8283",
+  "FMA8310"
+ ],
+ "r9": [
+  "FMA8364",
+  "FMA8391"
+ ],
+ "r10": [
+  "FMA8445",
+  "FMA8472"
+ ],
+ "r11": [
+  "FMA8531",
+  "FMA8532"
+ ],
+ "r12": [
+  "FMA8533",
+  "FMA8534"
+ ],
+ "sternum": [
+  "FMA7486",
+  "FMA7487",
+  "FMA7488"
  ],
  "clavicule": [
   "FMA13322",
@@ -68,37 +202,6 @@
  "scapula": [
   "FMA13395",
   "FMA13396"
- ],
- "sternum": [
-  "FMA7486",
-  "FMA7487",
-  "FMA7488"
- ],
- "cotes": [
-  "FMA7857",
-  "FMA7882",
-  "FMA7909",
-  "FMA7957",
-  "FMA8066",
-  "FMA8175",
-  "FMA8229",
-  "FMA8283",
-  "FMA8364",
-  "FMA8445",
-  "FMA8531",
-  "FMA8533",
-  "FMA7987",
-  "FMA8012",
-  "FMA8039",
-  "FMA8148",
-  "FMA8093",
-  "FMA8202",
-  "FMA8256",
-  "FMA8310",
-  "FMA8391",
-  "FMA8472",
-  "FMA8532",
-  "FMA8534"
  ],
  "humerus": [
   "FMA23130",
@@ -112,95 +215,113 @@
   "FMA23467",
   "FMA23468"
  ],
- "carpe": [
+ "scaphoide": [
   "FMA24435",
+  "FMA24436"
+ ],
+ "lunatum": [
   "FMA24437",
+  "FMA24438"
+ ],
+ "triquetrum": [
   "FMA24439",
+  "FMA24440"
+ ],
+ "pisiforme": [
   "FMA24441",
+  "FMA24442"
+ ],
+ "trapeze": [
   "FMA24443",
+  "FMA24444"
+ ],
+ "trapezoide": [
   "FMA23725",
+  "FMA24445"
+ ],
+ "capitatum": [
   "FMA24446",
+  "FMA24447"
+ ],
+ "hamatum": [
   "FMA24448",
-  "FMA24436",
-  "FMA24438",
-  "FMA24440",
-  "FMA24442",
-  "FMA24444",
-  "FMA24445",
-  "FMA24447",
   "FMA24449"
  ],
- "metacarpiens": [
+ "mc1": [
   "FMA24464",
+  "FMA24465"
+ ],
+ "mc2": [
   "FMA24466",
+  "FMA24467"
+ ],
+ "mc3": [
   "FMA24468",
+  "FMA24469"
+ ],
+ "mc4": [
   "FMA24470",
+  "FMA24471"
+ ],
+ "mc5": [
   "FMA24472",
-  "FMA24465",
-  "FMA24467",
-  "FMA24469",
-  "FMA24471",
   "FMA24473"
  ],
- "phalangesM": [
-  "FMA23938",
-  "FMA23940",
-  "FMA23942",
-  "FMA23944",
-  "FMA23951",
-  "FMA23953",
-  "FMA23955",
-  "FMA23957",
-  "FMA23959",
+ "ph_pouce_p": [
   "FMA24450",
-  "FMA24451",
-  "FMA24452",
-  "FMA24453",
-  "FMA24454",
-  "FMA24455",
-  "FMA24456",
-  "FMA24457",
-  "FMA24458",
+  "FMA65470"
+ ],
+ "ph_pouce_d": [
   "FMA24459",
+  "FMA23951"
+ ],
+ "ph_index_p": [
+  "FMA24451",
+  "FMA71915"
+ ],
+ "ph_index_m": [
+  "FMA24455",
+  "FMA23938"
+ ],
+ "ph_index_d": [
   "FMA24460",
+  "FMA23953"
+ ],
+ "ph_majeur_p": [
+  "FMA24452",
+  "FMA71908"
+ ],
+ "ph_majeur_m": [
+  "FMA24456",
+  "FMA23940"
+ ],
+ "ph_majeur_d": [
   "FMA24461",
-  "FMA24462",
-  "FMA24463",
-  "FMA65470",
-  "FMA66791",
-  "FMA71908",
-  "FMA71915",
+  "FMA23955"
+ ],
+ "ph_annulaire_p": [
+  "FMA24453",
   "FMA71916"
  ],
- "phalangesP": [
-  "FMA230986",
-  "FMA230988",
-  "FMA32634",
-  "FMA32635",
-  "FMA32636",
-  "FMA32637",
-  "FMA32638",
-  "FMA32639",
-  "FMA32640",
-  "FMA32641",
-  "FMA32642",
-  "FMA32643",
-  "FMA32644",
-  "FMA32645",
-  "FMA32646",
-  "FMA32647",
-  "FMA32650",
-  "FMA32651",
-  "FMA32652",
-  "FMA32653",
-  "FMA32654",
-  "FMA32655",
-  "FMA32656",
-  "FMA32657",
-  "FMA32658",
-  "FMA32659",
-  "FMA43253",
-  "FMA43254"
+ "ph_annulaire_m": [
+  "FMA24457",
+  "FMA23942"
+ ],
+ "ph_annulaire_d": [
+  "FMA24462",
+  "FMA23957"
+ ],
+ "ph_auriculaire_p": [
+  "FMA24454",
+  "FMA66791"
+ ],
+ "ph_auriculaire_m": [
+  "FMA24458",
+  "FMA23944"
+ ],
+ "ph_auriculaire_d": [
+  "FMA24463",
+  "FMA23959"
  ],
  "coxal": [
   "FMA16586",
@@ -222,77 +343,108 @@
   "FMA24480",
   "FMA24481"
  ],
- "tarse": [
-  "FMA24482",
-  "FMA24497",
-  "FMA24500",
-  "FMA24528",
-  "FMA24521",
-  "FMA24523",
-  "FMA24525",
-  "FMA24483",
-  "FMA24498",
-  "FMA24501",
-  "FMA24529",
-  "FMA24522",
-  "FMA24524",
-  "FMA24526"
- ],
- "metatarsiens": [
-  "FMA24507",
-  "FMA24509",
-  "FMA24511",
-  "FMA24513",
-  "FMA24515",
-  "FMA24508",
-  "FMA24510",
-  "FMA24512",
-  "FMA24514",
-  "FMA24516"
- ],
- "scaphoide": [
-  "FMA24435"
- ],
- "lunatum": [
-  "FMA24437"
- ],
- "triquetrum": [
-  "FMA24439"
- ],
- "pisiforme": [
-  "FMA24441"
- ],
- "trapeze": [
-  "FMA24443"
- ],
- "trapezoide": [
-  "FMA23725"
- ],
- "capitatum": [
-  "FMA24446"
- ],
- "hamatum": [
-  "FMA24448"
- ],
  "talus": [
-  "FMA24482"
+  "FMA24482",
+  "FMA24483"
  ],
  "calcaneus": [
-  "FMA24497"
+  "FMA24497",
+  "FMA24498"
  ],
  "naviculaire": [
-  "FMA24500"
+  "FMA24500",
+  "FMA24501"
  ],
  "cuboide": [
-  "FMA24528"
+  "FMA24528",
+  "FMA24529"
  ],
  "cuneMed": [
-  "FMA24521"
+  "FMA24521",
+  "FMA24522"
  ],
  "cuneInt": [
-  "FMA24523"
+  "FMA24523",
+  "FMA24524"
  ],
  "cuneLat": [
-  "FMA24525"
+  "FMA24525",
+  "FMA24526"
+ ],
+ "mt1": [
+  "FMA24507",
+  "FMA24508"
+ ],
+ "mt2": [
+  "FMA24509",
+  "FMA24510"
+ ],
+ "mt3": [
+  "FMA24511",
+  "FMA24512"
+ ],
+ "mt4": [
+  "FMA24513",
+  "FMA24514"
+ ],
+ "mt5": [
+  "FMA24515",
+  "FMA24516"
+ ],
+ "ph_hallux_p": [
+  "FMA43253",
+  "FMA43254"
+ ],
+ "ph_hallux_d": [
+  "FMA32650",
+  "FMA32651"
+ ],
+ "ph_o2_p": [
+  "FMA32634",
+  "FMA32635"
+ ],
+ "ph_o2_m": [
+  "FMA32642",
+  "FMA32643"
+ ],
+ "ph_o2_d": [
+  "FMA32652",
+  "FMA32653"
+ ],
+ "ph_o3_p": [
+  "FMA32636",
+  "FMA32637"
+ ],
+ "ph_o3_m": [
+  "FMA32644",
+  "FMA32645"
+ ],
+ "ph_o3_d": [
+  "FMA32654",
+  "FMA32655"
+ ],
+ "ph_o4_p": [
+  "FMA32638",
+  "FMA32639"
+ ],
+ "ph_o4_m": [
+  "FMA32646",
+  "FMA32647"
+ ],
+ "ph_o4_d": [
+  "FMA32656",
+  "FMA32657"
+ ],
+ "ph_o5_p": [
+  "FMA32640",
+  "FMA32641"
+ ],
+ "ph_o5_m": [
+  "FMA230986",
+  "FMA230988"
+ ],
+ "ph_o5_d": [
+  "FMA32658",
+  "FMA32659"
  ]
 }
