@@ -144,8 +144,6 @@ footer p{margin:.4em 0}
         <button class="cam" id="vXray" type="button" aria-pressed="true">Rayons X</button>
         <button class="cam" id="vNorm" type="button" aria-pressed="false">Normale</button>
       </div>
-      <button class="cam" id="btnFit" type="button">Recentrer sur l’os</button>
-      <button class="cam" id="btnAll" type="button">Voir la zone</button>
       <button class="cam" id="btnRot" type="button" aria-pressed="true">Rotation auto</button>
       <button class="cam" id="btnSlide" type="button" aria-pressed="true">Glissement</button>
       <button class="cam" id="btnAuto" type="button" aria-pressed="true">Centrage auto</button>
@@ -163,7 +161,7 @@ footer p{margin:.4em 0}
     <div class="meta"><span id="count"></span></div>
     <p class="clue" id="clue"></p>
     <form class="word" id="f" autocomplete="off">
-      <label for="answer" class="sr">Nom de l’os coloré en blanc</label>
+      <label for="answer" class="sr">Nom de l’os mis en évidence</label>
       <input type="text" id="answer" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="nom de l’os">
     </form>
     <p class="hint" id="hint" aria-live="polite"></p>
@@ -178,7 +176,7 @@ footer p{margin:.4em 0}
       <ul>
         <li>Deux vues : « Rayons X » (os translucides, comme un scanner) et « Normale » (os pleins, éclairés). Le choix est gardé.</li>
         <li>À chaque bonne réponse, la vue glisse vers la gauche et la zone suivante arrive de la droite (bouton « Glissement » pour l’activer ou le couper ; coupé par défaut si ton système demande de réduire les animations). La liste « Os trouvés » garde ton historique.</li>
-        <li>L’os en blanc lumineux est à nommer. Fais tourner le squelette pour le voir sous tous les angles, puis tape son nom au clavier (physique ou à l’écran) et Entrée.</li>
+        <li>L’os lumineux est à nommer : en blanc en vue Rayons X, en bleu en vue Normale. Fais tourner le squelette pour le voir sous tous les angles, puis tape son nom au clavier (physique ou à l’écran) et Entrée.</li>
         <li>Seule la zone du corps concernée est affichée (crâne, colonne, thorax, bras, main, bassin, jambe, pied). Elle tourne lentement sur elle-même ; touche-la pour la faire tourner toi-même, ou coupe la rotation avec « Rotation auto ».</li>
         <li>Les 206 os du corps humain sont à retrouver, sous 120 noms : un os pair (pariétal, côte, fémur…) n’a qu’un nom. Il s’allume des deux côtés pour le crâne, le thorax et le bassin, et du côté droit pour les membres.</li>
         <li>Côtes, vertèbres, métacarpiens… : tape le numéro (« côte 5 », « C3 », « métacarpien II », « phalange distale du gros orteil »). Le pavé de chiffres est au clavier à l’écran.</li>
@@ -416,19 +414,23 @@ const MAT = {
     transparent:true, depthWrite:true, depthTest:true, side:THREE.DoubleSide
   })
 };
+const activeBlue=new THREE.ShaderMaterial({
+  vertexShader:"const float uPush=0.0;\n"+VERT,
+  fragmentShader:"varying vec3 vN; varying vec3 vV; void main(){ float d=abs(dot(normalize(vN),normalize(vV))); float s=0.70+0.30*d; gl_FragColor=vec4(vec3(0.12,0.46,1.0)*s,1.0); }",
+  transparent:true, depthWrite:true, depthTest:true, side:THREE.DoubleSide });
 const MATN = {
   idle: new THREE.MeshStandardMaterial({color:"#E8DCC3",roughness:0.72,metalness:0.02,side:THREE.DoubleSide}),
   found: new THREE.MeshStandardMaterial({color:"#3FC57C",roughness:0.55,metalness:0.02,emissive:"#0A3A20",side:THREE.DoubleSide}),
-  active: MAT.active
+  active: activeBlue
 };
 const GHOST=new THREE.ShaderMaterial({ vertexShader:"const float uPush=0.0;\n"+VERT,
-  fragmentShader:"varying vec3 vN; varying vec3 vV; void main(){ gl_FragColor=vec4(vec3(1.0),0.30); }",
+  fragmentShader:"varying vec3 vN; varying vec3 vV; void main(){ gl_FragColor=vec4(0.12,0.46,1.0,0.38); }",
   transparent:true, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide });
 const glowMat=(push)=>{ const m=new THREE.ShaderMaterial({
-  uniforms:{uK:{value:1.0}},
+  uniforms:{uK:{value:1.0},uC:{value:new THREE.Color(1,1,1)}},
   vertexShader:`varying vec3 vN; varying vec3 vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position+normal*${push.toFixed(5)},1.0); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
-  fragmentShader:`uniform float uK; varying vec3 vN; varying vec3 vV;
-    void main(){ float d=abs(dot(normalize(vN),normalize(vV))); gl_FragColor=vec4(vec3(1.0),(0.10+0.55*(1.0-d))*uK); }`,
+  fragmentShader:`uniform float uK; uniform vec3 uC; varying vec3 vN; varying vec3 vV;
+    void main(){ float d=abs(dot(normalize(vN),normalize(vV))); gl_FragColor=vec4(uC,(0.10+0.55*(1.0-d))*uK); }`,
   transparent:true, depthWrite:false, depthTest:true, blending:THREE.AdditiveBlending, side:THREE.BackSide }); return m; };
 
 function resize(){
@@ -483,7 +485,7 @@ function applyStates(){
     const ms=meshesOf(state.activeId); const r=groupSphere(ms).radius;
     const push=Math.min(0.012,Math.max(0.0012,r*0.035));
     const uK={value:1.0}; state.glowK=uK;
-    for(const m of ms){ const gm=glowMat(push/(m.scale.x||1)); gm.uniforms.uK=uK; const g=new THREE.Mesh(m.geometry,gm); g.frustumCulled=false; g.renderOrder=5; m.add(g); state.glow.push(g);
+    for(const m of ms){ const gm=glowMat(push/(m.scale.x||1)); gm.uniforms.uK=uK; if(state.view==="normal") gm.uniforms.uC.value.setRGB(0.12,0.46,1.0); const g=new THREE.Mesh(m.geometry,gm); g.frustumCulled=false; g.renderOrder=5; m.add(g); state.glow.push(g);
       if(state.view==="normal"){ const gh=new THREE.Mesh(m.geometry,GHOST); gh.frustumCulled=false; gh.renderOrder=6; m.add(gh); state.glow.push(gh); } }
   }
   dirty=true;
@@ -569,8 +571,6 @@ setView(state.view);
 function syncSlide(){ $("btnSlide").setAttribute("aria-pressed",state.slide); try{ localStorage.setItem("quiz-os-slide",state.slide?"1":"0"); }catch(e){} }
 $("btnSlide").addEventListener("click",()=>{ state.slide=!state.slide; syncSlide(); });
 syncSlide();
-$("btnFit").addEventListener("click",()=>focusActive(false));
-$("btnAll").addEventListener("click",overview);
 $("btnAuto").addEventListener("click",e=>{ state.auto=!state.auto; e.currentTarget.setAttribute("aria-pressed",state.auto); if(state.auto) focusActive(false); });
 
 /* =====================================================================
@@ -644,7 +644,7 @@ function show(){
   const b=S.queue[S.i];
   S.hints=0; S.errors=0; S.locked=false;
   setActive(b.id);
-  canvas.setAttribute("aria-label",`${REGION_LABEL[b.region]} en 3D. Un os est allumé en blanc : ${b.clue}`);
+  canvas.setAttribute("aria-label",`${REGION_LABEL[b.region]} en 3D. Un os est mis en évidence : ${b.clue}`);
   $("count").textContent=`Os ${S.i+1} / ${S.queue.length}`;
   $("clue").textContent=b.clue;
   $("hint").textContent=""; fb("","");
