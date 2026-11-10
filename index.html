@@ -48,6 +48,7 @@ h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.01em}
 .stage.fail{border-color:var(--bad);box-shadow:0 0 0 3px var(--bad),inset 0 0 70px rgba(255,70,70,.30)}
 #gl{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
 #gl:active{cursor:grabbing}
+#gl.arrow,#gl.arrow:active{cursor:default}   /* option « Tout » : flèche, plus précise pour cliquer un os ou un muscle */
 #gl:focus-visible{outline-offset:-3px}
 .loading,.nogl{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-align:center;padding:20px;color:var(--muted)}
 .bar{width:min(260px,70%);height:6px;border-radius:3px;background:var(--key);overflow:hidden}
@@ -66,6 +67,21 @@ h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.01em}
 .card span{color:var(--muted);font-size:.95rem}
 .card.main-card{background:var(--accent);color:var(--bg2);border-color:var(--accent)}
 .card.main-card span{color:var(--bg2)}
+.explain{width:100%;margin:6px 0 10px;border:1px solid var(--ok);border-radius:12px;padding:12px 14px;background:rgba(80,200,150,.08);text-align:left}
+.explain b{display:block;margin-bottom:4px;font-size:1.1rem}
+.explain p{margin:0 0 10px;font-size:1.08rem;line-height:1.5}
+.explain-in{text-align:left;border-left:3px solid var(--accent);padding-left:10px;margin:10px 0}
+.muscles p.lead{color:var(--muted);margin:0 0 20px;font-size:1.05rem}
+#tip{position:absolute;z-index:6;max-width:min(330px,82%);background:rgba(10,16,26,.95);border:1px solid var(--accent);border-radius:12px;padding:10px 12px;pointer-events:none;font-size:.92rem;line-height:1.4;box-shadow:0 6px 22px rgba(0,0,0,.55);text-align:left}
+#tip.pinned{pointer-events:auto}
+#tip b{display:block;font-size:1.08rem}
+#tip .tz{display:block;color:var(--muted);font-size:.78rem;margin-bottom:4px}
+#tip p{margin:5px 0 0}
+#tip em{color:var(--accent);font-style:normal;font-weight:700}
+.main.noside{grid-template-columns:minmax(0,1fr)}
+.main.noside .side{display:none}
+#exSel{max-width:680px;margin:8px auto 0}
+#exSel .hintline{margin:0;color:var(--ink);font-size:1.08rem}
 .card:disabled{opacity:.55;cursor:not-allowed}
 .card.wide{width:100%;margin-top:14px;min-height:0;flex-direction:row;align-items:center;gap:14px}
 .card.wide b{white-space:nowrap}
@@ -104,6 +120,8 @@ h1{font-size:1.15rem;margin:0;font-weight:700;letter-spacing:.01em}
 .hist .t.h{color:var(--warn)}
 .empty{margin:4px 0 0;font-size:.85rem;color:var(--muted)}
 @keyframes histin{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}
+.opts{display:flex;flex-direction:column;gap:6px}
+.optbtn{display:none}
 .seg{display:flex;gap:0}
 .seg .cam{border-radius:0;flex:1;white-space:nowrap}
 .seg .cam:first-child{border-radius:10px 0 0 10px}
@@ -150,7 +168,7 @@ footer{width:100%;max-width:760px;margin-top:28px;padding-top:14px;border-top:1p
 footer a{color:var(--accent)}
 footer p{margin:.4em 0}
 [hidden]{display:none!important}
-@media (max-width:600px){ .seg{flex:1 1 100%} .camtools{flex-direction:row;top:auto;bottom:8px;left:8px;right:8px;justify-content:center;flex-wrap:wrap} .cam{padding:5px 9px;font-size:.78rem;min-height:40px} .col>.stage{height:40vh;min-height:240px} .wrap{padding-left:10px;padding-right:10px} .kb .r{gap:3px} .k{height:42px;font-size:.98rem} .kb .r{gap:4px} }
+@media (max-width:600px){ .camtools{top:6px;right:6px;align-items:flex-end;gap:4px} .seg{flex:none} .cam{padding:3px 8px;font-size:.72rem;min-height:30px;border-radius:8px} .seg .cam:first-child{border-radius:8px 0 0 8px} .seg .cam:last-child{border-radius:0 8px 8px 0} .optbtn{display:block} .opts{display:none;align-items:stretch} .camtools.open .opts{display:flex} .mode,.lvlbtn{padding:5px 10px;font-size:.8rem;min-height:34px} header{gap:6px 10px} h1{font-size:1rem} .stats{font-size:.78rem;gap:10px} .col>.stage{height:40vh;min-height:240px} .wrap{padding-left:10px;padding-right:10px} .kb .r{gap:3px} .k{height:42px;font-size:.98rem} .kb .r{gap:4px} }
 @media (prefers-reduced-motion:reduce){ .hist li{animation:none} .bar2 i{transition:none} .shake{animation:none} .bar i{transition:none} }
 </style>
 </head>
@@ -162,20 +180,29 @@ footer p{margin:.4em 0}
     <p class="lead">Les 206 os du corps humain en 3D. Comment veux-tu jouer ?</p>
     <div class="cards">
       <button class="card main-card" id="lcLevels" type="button"><b id="lcLevelsT">Parcours par niveaux</b><span id="lcLevelsD"></span></button>
-      <button class="card" id="lcTrain" type="button"><b>S’entraîner sur tous les os</b><span>Les 120 noms mélangés au hasard, avec les aides autorisées. Tu peux aussi t’exercer série par série : Squelette, Crâne, Main, Pied.</span></button>
+      <button class="card" id="lcTrain" type="button"><b>Explorer le squelette entier</b><span>Clique sur un os pour le voir en vert et lire son nom, sa position et son rôle : aucune question. Tu peux aussi t’exercer série par série : Squelette, Crâne, Main, Pied.</span></button>
     </div>
     <button class="card wide" id="lcMuscles" type="button" disabled><b id="lcMusclesT">Parcours des muscles 🔒</b><span id="lcMusclesD"></span></button>
     <ul class="lvlinfo" id="lvlinfo" aria-label="Description des niveaux"></ul>
   </section>
   <section class="muscles" id="muscles" hidden aria-labelledby="musclesTitle">
     <h2 id="musclesTitle" tabindex="-1">Les muscles du corps humain</h2>
-    <p style="color:var(--muted)">Parcours débloqué : tu maîtrises les 206 os. Les 5 niveaux de muscles arrivent bientôt.</p>
-    <ol class="mlv" id="mlv" aria-label="Niveaux de muscles"></ol>
-    <div class="tools"><button class="btn btn-main" id="backBones" type="button">Retour aux os</button></div>
+    <p class="lead">Parcours débloqué ! <span id="mCount"></span> à retrouver sur le squelette en 3D. Chaque muscle trouvé ou présenté est expliqué : où il se trouve, ce qu’il fait et par quel nerf il est commandé.</p>
+    <div class="cards">
+      <button class="card main-card" id="mcLevels" type="button"><b id="mcLevelsT">Parcours par niveaux</b><span id="mcLevelsD"></span></button>
+      <button class="card" id="mcTrain" type="button"><b>Explorer le corps entier</b><span>Clique sur un muscle pour le voir en vert et lire son nom, sa position et son fonctionnement : aucune question. Séries d’entraînement : tête et cou, tronc, membre supérieur, membre inférieur.</span></button>
+    </div>
+    <p id="mLoad" role="status" style="color:var(--muted);min-height:1.4em"></p>
+    <ul class="lvlinfo" id="mlv" aria-label="Niveaux de muscles"></ul>
+    <div class="tools"><button class="btn" id="backBones" type="button">Retour aux os</button></div>
   </section>
   <div id="app" hidden>
   <header>
     <h1>Quel est cet os ?</h1>
+    <div class="modes" id="dsRow" role="group" aria-label="Choisir le sujet">
+      <button class="lvlbtn" id="dsOs" type="button" aria-pressed="true">Os</button>
+      <button class="lvlbtn" id="dsMus" type="button" aria-pressed="false" disabled>Muscles 🔒</button>
+    </div>
     <div class="modes" id="modesTrain" role="group" aria-label="Choisir une série d’entraînement">
       <button class="mode" data-mode="squelette" aria-pressed="true">Squelette<small></small></button>
       <button class="mode" data-mode="crane" aria-pressed="false">Crâne<small></small></button>
@@ -183,6 +210,14 @@ footer p{margin:.4em 0}
       <button class="mode" data-mode="pied" aria-pressed="false">Pied<small></small></button>
       <button class="mode" data-mode="tout" aria-pressed="false">Tout<small></small></button>
       <button class="lvlbtn alt" id="goLevels" type="button">Parcours par niveaux</button>
+    </div>
+    <div class="modes" id="modesTrainM" role="group" aria-label="Choisir une série de muscles" hidden>
+      <button class="mode" data-mode="tete" aria-pressed="false">Tête et cou<small></small></button>
+      <button class="mode" data-mode="tronc" aria-pressed="false">Tronc<small></small></button>
+      <button class="mode" data-mode="msup" aria-pressed="false">Membre sup.<small></small></button>
+      <button class="mode" data-mode="minf" aria-pressed="false">Membre inf.<small></small></button>
+      <button class="mode" data-mode="tout" aria-pressed="false">Tout<small></small></button>
+      <button class="lvlbtn alt" id="goLevelsM" type="button">Parcours par niveaux</button>
     </div>
     <div class="modes" id="modesLevel" role="group" aria-label="Choisir un niveau" hidden></div>
     <div class="stats" aria-live="off"><span><b id="sOk">0</b> du 1er coup</span><span><b id="sHelp">0</b> aidés</span><span><b id="sPass">0</b> révélés</span></div>
@@ -197,10 +232,14 @@ footer p{margin:.4em 0}
         <button class="cam" id="vXray" type="button" aria-pressed="true">Rayons X</button>
         <button class="cam" id="vNorm" type="button" aria-pressed="false">Normale</button>
       </div>
+      <button class="cam optbtn" id="btnOpts" type="button" aria-expanded="false" aria-controls="opts">Options</button>
+      <div class="opts" id="opts">
       <button class="cam" id="btnRot" type="button" aria-pressed="true">Rotation auto</button>
       <button class="cam" id="btnSlide" type="button" aria-pressed="true">Glissement</button>
       <button class="cam" id="btnAuto" type="button" aria-pressed="true">Centrage auto</button>
+      </div>
     </div>
+    <div id="tip" role="tooltip" hidden></div>
     <div class="loading" id="loading" role="status">
       <span id="loadTxt">Chargement du squelette 3D…</span>
       <div class="bar" aria-hidden="true"><i id="loadBar"></i></div>
@@ -210,6 +249,7 @@ footer p{margin:.4em 0}
   <p class="view-name" id="zoneName" aria-live="polite" style="color:var(--ink);font-weight:700"></p>
   <p class="view-name" id="glHelp">Glisse pour tourner, molette ou pincement pour zoomer. Au clavier (zone 3D sélectionnée) : flèches pour tourner, + et − pour zoomer, 0 pour recentrer.</p>
 
+  <div class="explain" id="exSel" hidden aria-live="polite"></div>
   <section class="play" id="play">
     <div class="meta"><span id="count"></span></div>
     <p class="clue" id="clue"></p>
@@ -219,6 +259,7 @@ footer p{margin:.4em 0}
     </form>
     <p class="hint" id="hint" aria-live="polite"></p>
     <p class="fb" id="fb" role="status" aria-live="polite"></p>
+    <div class="explain" id="explain" hidden aria-live="polite"></div>
     <div class="kb" id="kb" role="group" aria-label="Clavier AZERTY à l’écran"></div>
     <div class="tools">
       <button class="btn" id="btnHint" type="button">Afficher une lettre</button>
@@ -227,6 +268,8 @@ footer p{margin:.4em 0}
     <details class="howto">
       <summary>Comment jouer</summary>
       <ul>
+        <li>Option « Tout » : le squelette entier (ou le corps entier avec les muscles) s’affiche sans question. Clique sur un os ou un muscle : il passe en vert et son explication s’affiche. Clique sur un autre : le précédent redevient normal. Clique dans le vide pour tout désélectionner.</li>
+        <li>En entraînement libre, passe le curseur sur un os ou un muscle (ou touche-le sur téléphone) : son nom, sa position et son rôle s’affichent, sauf pour celui que tu dois trouver. En parcours par niveaux, c’est désactivé (épreuve). À la fin du niveau 5, tu peux explorer librement le squelette complet puis le corps entier.</li>
         <li>Deux vues : « Rayons X » (os translucides, comme un scanner) et « Normale » (os pleins, éclairés). Le choix est gardé.</li>
         <li>À chaque bonne réponse, la vue glisse vers la gauche et la zone suivante arrive de la droite (le bouton « Glissement » permet de le couper ; il est actif à chaque lancement). La liste « Os trouvés » garde ton historique.</li>
         <li>L’os lumineux est à nommer : en blanc en vue Rayons X, en bleu en vue Normale. Fais tourner le squelette pour le voir sous tous les angles, puis tape son nom au clavier (physique ou à l’écran) et Entrée.</li>
@@ -257,7 +300,7 @@ footer p{margin:.4em 0}
     <p><strong>Crédits.</strong> Modèles 3D : <a href="https://lifesciencedb.jp/bp3d/" target="_blank" rel="noopener">BodyParts3D</a>, © The Database Center for Life Science, sous licence
       <a href="https://creativecommons.org/licenses/by-sa/2.1/jp/deed.fr" target="_blank" rel="noopener">CC BY-SA 2.1 Japon</a>.
       Mitsuhashi N. et al., <em>Nucleic Acids Res.</em> 2009, <a href="https://doi.org/10.1093/nar/gkn613" target="_blank" rel="noopener">doi:10.1093/nar/gkn613</a>.</p>
-    <p>Modifications : os sélectionnés, maillages simplifiés, convertis en GLB compressé (Meshopt), repère réorienté. Le coccyx, fusionné au sacrum dans la source, a été isolé par une coupe approximative.
+    <p>Modifications : os et muscles sélectionnés (les muscles viennent aussi de BodyParts3D, réunis par groupe de faisceaux), maillages simplifiés, convertis en GLB compressé (Meshopt), repère réorienté. Le coccyx, fusionné au sacrum dans la source, a été isolé par une coupe approximative.
       Ces modèles dérivés restent sous la même licence CC BY-SA 2.1 Japon.</p>
     <p><strong>Compléments :</strong> osselets de l’oreille et coccyx issus de <a href="https://www.z-anatomy.com/" target="_blank" rel="noopener">Z-Anatomy</a> (licence <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.fr" target="_blank" rel="noopener">CC BY-SA 4.0</a>), eux-mêmes dérivés de BodyParts3D.</p>
     <p>Moteur 3D : <a href="https://threejs.org/" target="_blank" rel="noopener">three.js</a> (licence MIT). Police : Atkinson Hyperlegible (SIL OFL). Termes : Terminologia Anatomica.</p>
@@ -279,6 +322,7 @@ const ORDM=["1er","2e","3e","4e","5e","6e","7e","8e","9e","10e","11e","12e"];
 const numForms=n=>[String(n),ROMAN[n-1],ORDM[n-1],ORDM[n-1].replace(/^(\d+)e$/,"$1eme"),ORDF[n-1],...(n===2?["second"]:[])].filter((v,i,a)=>a.indexOf(v)===i);
 const ORDF_FEM=["première","deuxième","troisième","quatrième","cinquième","sixième","septième","huitième","neuvième","dixième","onzième","douzième"];
 const ORDX=["premier","deuxième","troisième","quatrième","cinquième"];
+let D, DS;
 const BONES=[];
 const add=(id,name,region,ans,clue,extra={})=>BONES.push({id,name,region,ans,clue,...extra});
 
@@ -419,7 +463,7 @@ const LEVELS=[
   {n:4,nom:"Niveau 4",desc:"+ les os très difficiles"},
   {n:5,nom:"Niveau 5",desc:"Tous les os"}
 ];
-const levelBones=n=>BONES.filter(b=>b.tier<=n);
+const levelBones=n=>D.items.filter(b=>b.tier<=n);
 
 /* ---------- Normalisation et comparaison ---------- */
 function norm(s){
@@ -427,10 +471,85 @@ function norm(s){
    .replace(/[’`]/g,"'").replace(/œ/g,"oe").replace(/[-_.,;:!?()"]/g," ")
    .replace(/\s+/g," ").trim()
    .replace(/^(l'|le |la |les |un |une |des |c'est |c est )/,"").trim()
-   .replace(/^l /,"").replace(/^os /,"").trim();
+   .replace(/^l /,"").replace(/^os /,"").replace(/^muscle /,"").trim();
 }
 function lev(a,b){ const m=a.length,n=b.length; if(!m) return n; if(!n) return m; let p=[...Array(n+1).keys()]; for(let i=1;i<=m;i++){ const c=[i]; for(let j=1;j<=n;j++) c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1)); p=c;} return p[n]; }
-BONES.forEach(b=>{ b.nAns=b.ans.map(norm); b.nOld=(b.old||[]).map(norm); b.nName=norm(b.name); });
+const prepItems=arr=>arr.forEach(b=>{ b.nAns=b.ans.map(norm); b.nOld=(b.old||[]).map(norm); b.nName=norm(b.name); });
+prepItems(BONES);
+const BONE_INFO={
+ frontal:"Forme le front et le toit des orbites ; protège les lobes frontaux du cerveau et abrite les sinus frontaux.",
+ parietal:"Forme la voûte et les côtés du crâne ; protège le cerveau ; s’articule avec le frontal, l’occipital et le temporal par des sutures.",
+ temporal:"Forme la tempe et une partie de la base du crâne ; abrite l’oreille moyenne et l’oreille interne ; s’articule avec la mandibule.",
+ occipital:"Forme l’arrière et la base du crâne ; le foramen magnum laisse passer la moelle spinale ; s’articule avec l’atlas.",
+ sphenoide:"Os médian en forme de papillon : forme la base du crâne et la paroi de l’orbite ; la selle turcique loge l’hypophyse.",
+ ethmoide:"Sépare la cavité nasale du cerveau ; sa lame criblée laisse passer les nerfs de l’odorat ; porte des cornets nasaux et forme une partie de l’orbite.",
+ nasal:"Forme le dos du nez : soutient la partie haute du nez et protège l’entrée de la cavité nasale.",
+ maxillaire:"Forme la mâchoire supérieure, le palais, une partie de l’orbite et de la cavité nasale ; porte les dents du haut et un sinus.",
+ zygomatique:"Forme la pommette et une partie de l’orbite ; avec le temporal il forme l’arcade zygomatique, où s’attache le masséter.",
+ lacrimal:"Petit os de la paroi interne de l’orbite : sa gouttière loge le sac lacrymal qui draine les larmes vers le nez.",
+ palatin:"Forme l’arrière du palais osseux et une partie du plancher de la cavité nasale et de l’orbite.",
+ cornet:"Lame enroulée de la paroi du nez : augmente la surface de la muqueuse pour réchauffer, humidifier et filtrer l’air inspiré.",
+ vomer:"Forme la partie postéro-inférieure de la cloison nasale, qui sépare les deux fosses nasales.",
+ mandibule:"Seul os mobile de la tête : porte les dents du bas, s’articule avec le temporal et reçoit les muscles de la mastication.",
+ hyoide:"Os en U du cou, suspendu par des muscles et sans articulation osseuse : soutient la langue et le larynx, participe à la déglutition et à la parole.",
+ malleus:"Premier osselet de l’oreille : relié au tympan, il transmet les vibrations du son à l’incus.",
+ incus:"Osselet intermédiaire : transmet les vibrations du malleus au stapes.",
+ stapes:"Plus petit os du corps : sa base s’appuie sur la fenêtre ovale et transmet les vibrations à l’oreille interne.",
+ c1:"Atlas : porte le crâne et permet le mouvement de « oui » ; il n’a pas de corps vertébral.",
+ c2:"Axis : sa dent (processus odontoïde) sert de pivot à l’atlas et permet de tourner la tête (« non »).",
+ c7:"Vertèbre proéminente : son épineuse longue se palpe sous la peau ; charnière entre le cou et le thorax.",
+ sacrum:"Cinq vertèbres soudées : transmet le poids du tronc aux os coxaux par les articulations sacro-iliaques et ferme le bassin en arrière.",
+ coccyx:"Vestige de la queue : point d’attache de muscles et ligaments du plancher pelvien ; appui en position assise.",
+ sternum:"Os plat médian de la poitrine (manubrium, corps, processus xiphoïde) : protège le cœur et s’articule avec les clavicules et les cartilages costaux.",
+ clavicule:"Entretoise entre le sternum et l’épaule : maintient l’épaule écartée du thorax et transmet les forces du bras au tronc.",
+ scapula:"Omoplate : porte la cavité glénoïde de l’épaule et de larges surfaces d’insertion musculaire ; glisse sur le thorax.",
+ humerus:"Os du bras : sa tête s’articule à l’épaule, son extrémité basse au coude ; levier des muscles du bras (deltoïde, biceps, triceps).",
+ radius:"Os latéral de l’avant-bras : tourne autour de l’ulna (pronation, supination) et porte la main au poignet.",
+ ulna:"Os médial de l’avant-bras : forme la charnière du coude (olécrâne) et reste stable pendant la rotation du radius.",
+ scaphoide:"Relie les deux rangées d’os du carpe ; fragile : sa fracture est fréquente après une chute sur la main.",
+ lunatum:"Au centre du poignet, articulé avec le radius : transmet les charges de la main à l’avant-bras.",
+ triquetrum:"Côté ulnaire du poignet : porte le pisiforme et stabilise le carpe.",
+ pisiforme:"Os sésamoïde dans le tendon du fléchisseur ulnaire du carpe : améliore son bras de levier.",
+ trapeze:"Base du pouce : son articulation en selle avec le 1er métacarpien permet l’opposition du pouce.",
+ trapezoide:"Soutient la base du 2e métacarpien (index).",
+ capitatum:"Le plus gros os du carpe : au centre du poignet, il soutient le 3e métacarpien et transmet les forces.",
+ hamatum:"Son crochet protège le canal carpien et sert de poulie aux tendons ; soutient les 4e et 5e métacarpiens.",
+ coxal:"Os de la hanche (ilium, ischium et pubis soudés) : avec le sacrum il forme le bassin, porte l’acétabulum et transmet le poids du tronc aux jambes.",
+ femur:"Plus long et plus solide os du corps : porte le poids, articule la hanche et le genou ; attache des grands muscles de la cuisse.",
+ patella:"Plus grand os sésamoïde : glisse devant le genou dans le tendon du quadriceps et augmente sa force d’extension.",
+ tibia:"Os principal de la jambe : transmet le poids du fémur au pied (plateau tibial, malléole médiale).",
+ fibula:"Os fin latéral de la jambe : porte peu de poids, forme la malléole latérale (stabilité de la cheville) et reçoit des muscles.",
+ talus:"Relie la jambe au pied : transmet le poids du tibia au calcanéus et à l’avant-pied ; aucun muscle ne s’y attache.",
+ calcaneus:"Os du talon : appui au sol et insertion du tendon d’Achille (triceps sural).",
+ naviculaire:"Clé de la voûte médiale du pied : relie le talus aux trois cunéiformes.",
+ cuboide:"Bord latéral du pied : soutient les 4e et 5e métatarsiens ; une gouttière guide le tendon du long fibulaire.",
+ cuneMed:"Base du gros orteil : soutient le 1er métatarsien ; insertion du tibial antérieur.",
+ cuneInt:"Plus petit cunéiforme, en clé de voûte entre les deux autres (arche transverse).",
+ cuneLat:"Soutient le 3e métatarsien et contribue à l’arche transverse du pied."
+};
+const ORD_F=["première","deuxième","troisième","quatrième","cinquième","sixième","septième","huitième","neuvième","dixième","onzième","douzième"];
+function boneInfo(b){
+  const id=b.id; let m;
+  if(BONE_INFO[id]) return BONE_INFO[id];
+  if(/^c[3-6]$/.test(id)) return "Vertèbre cervicale : soutient la tête, protège la moelle spinale et laisse passer l’artère vertébrale par ses trous transversaires ; région très mobile.";
+  if(m=id.match(/^t(\d+)$/)){ const n=+m[1]; return "Vertèbre thoracique : s’articule avec les côtes et forme la paroi postérieure du thorax ; protège la moelle spinale ; mobilité limitée par la cage thoracique."+(n===1?" T1 s’articule avec la 1re côte et prolonge la colonne cervicale.":n>=11?" T"+n+" porte une côte flottante ; transition vers les vertèbres lombaires.":""); }
+  if(m=id.match(/^l(\d)$/)){ const n=+m[1]; return "Vertèbre lombaire : très massive, elle supporte le poids du haut du corps et permet la flexion, l’extension et l’inclinaison du tronc."+(n===5?" L5 repose sur le sacrum (disque lombo-sacré).":""); }
+  if(m=id.match(/^r(\d+)$/)){ const n=+m[1]; const k=n<=7?"vraie côte : reliée directement au sternum par son cartilage":n<=10?"fausse côte : son cartilage rejoint celui de la côte au-dessus":"côte flottante : libre en avant"; return "Côte "+n+" ("+k+"). Protège le cœur et les poumons et bouge à chaque respiration pour agrandir le thorax."; }
+  if(m=id.match(/^mc(\d)$/)) return "Os de la paume, relié au carpe et à la phalange proximale ; il forme le poing."+(m[1]==="1"?" Le 1er est très mobile (opposition du pouce).":"");
+  if(m=id.match(/^mt(\d)$/)) return "Os de l’avant-pied : il supporte le poids et la poussée du pas."+(m[1]==="1"?" Le 1er est le plus gros : il porte une grande part du poids.":"");
+  if(m=id.match(/^ph_(\w+)_([pmd])$/)){ const seg=m[2], foot=/^(hallux|o\d)$/.test(m[1]); const part=foot?"orteil":"doigt";
+    if(seg==="p") return "Phalange proximale : s’articule avec le "+(foot?"métatarsien":"métacarpien")+" ; permet de fléchir la base du "+part+".";
+    if(seg==="m") return "Phalange moyenne : relie les deux autres phalanges (articulation en charnière) ; participe à la flexion du "+part+".";
+    return "Phalange distale : porte l’ongle et soutient la pulpe du "+part+(foot?" (appui et propulsion).":" (préhension fine)."); }
+  return b.clue;
+}
+BONES.forEach(b=>{ b.info=boneInfo(b); });
+const modeFilter=function(mode){ return mode==="tout"?this.items.slice():this.items.filter(b=>b.view.includes(mode)); };
+DS={
+  os:{key:"quiz-os-niveau",one:"os",One:"Os",pl:"os",Pl:"Os",items:BONES,modes:{squelette:"Squelette",crane:"Crâne",main:"Main",pied:"Pied",tout:"Tout"},foundBy:{squelette:new Set(),crane:new Set(),main:new Set(),pied:new Set(),tout:new Set()},bonesFor:modeFilter},
+  muscles:{key:"quiz-os-niveau-muscles",one:"muscle",One:"Muscle",pl:"muscles",Pl:"Muscles",items:[],modes:{tete:"Tête et cou",tronc:"Tronc",msup:"Membre sup.",minf:"Membre inf.",tout:"Tout"},foundBy:{tete:new Set(),tronc:new Set(),msup:new Set(),minf:new Set(),tout:new Set()},bonesFor:modeFilter}
+};
+D=DS.os;
 
 /* =====================================================================
    Scène 3D
@@ -503,6 +622,19 @@ const GHOST=new THREE.ShaderMaterial({ vertexShader:"const float uPush=0.0;\n"+V
 const GHOSTR=new THREE.ShaderMaterial({ vertexShader:"const float uPush=0.0;\n"+VERT,
   fragmentShader:"varying vec3 vN; varying vec3 vV; void main(){ gl_FragColor=vec4(1.0,0.2,0.2,0.55); }",
   transparent:true, depthWrite:false, depthTest:false, blending:THREE.AdditiveBlending, side:THREE.DoubleSide });
+const MATM = {
+  idle: xray("#FF9A86",0.08,0.55),
+  found: MAT.found,
+  active: MAT.active,
+  red: MAT.red
+};
+const MATMN = {
+  idle: new THREE.MeshStandardMaterial({color:"#B4574A",roughness:0.62,metalness:0.02,side:THREE.DoubleSide}),
+  found: MATN.found,
+  active: MATN.active,
+  red: MATN.red
+};
+const MATB = xray("#9DB9E0",0.045,0.34); /* os en retrait quand on étudie les muscles */
 const glowMat=(push)=>{ const m=new THREE.ShaderMaterial({
   uniforms:{uK:{value:1.0},uC:{value:new THREE.Color(1,1,1)}},
   vertexShader:`varying vec3 vN; varying vec3 vV; void main(){ vN=normalize(normalMatrix*normal); vec4 mv=modelViewMatrix*vec4(position+normal*${push.toFixed(5)},1.0); vV=normalize(-mv.xyz); gl_Position=projectionMatrix*mv; }`,
@@ -530,11 +662,14 @@ async function loadModel(){
   // dédoublonne : les noms de nœuds sont les identifiants FMA
   scene.add(gltf.scene);
   scene.updateMatrixWorld(true);
+  state.regionSets.full_os=new Set(state.meshes.keys());
   state.ready=true;
+  registerItems(DS.os);
 }
 
 /* états -> matériaux */
-function meshesOf(id){ const set=state.regionSets[REGION_OF[id]]; return (state.groups[id]||[]).filter(f=>!set||set.has(f)).map(f=>state.meshes.get(f)).filter(Boolean); }
+REGION_LABEL.full_os="Squelette humain complet (206 os)"; REGION_LABEL.full_mus="Corps humain complet : muscles sur le squelette";
+function meshesOf(id){ const set=state.fullMode?null:state.regionSets[REGION_OF[id]]; return (state.groups[id]||[]).filter(f=>!set||set.has(f)).map(f=>state.meshes.get(f)).filter(Boolean); }
 function regionSphere(r){
   if(!state.spheres[r]){ const ms=[...state.regionSets[r]].map(f=>state.meshes.get(f)).filter(Boolean); state.spheres[r]=groupSphere(ms); }
   return state.spheres[r];
@@ -542,7 +677,7 @@ function regionSphere(r){
 /* n'affiche que la zone concernée, cadrée d'office, vue de face */
 function setRegion(r){
   if(state.region===r) return false;
-  state.region=r; const set=state.regionSets[r];
+  state.region=r; state.fullMode=r.indexOf("full_")===0; const set=state.regionSets[r];
   for(const [name,m] of state.meshes) m.visible=set.has(name);
   $("zoneName").textContent="Zone affichée : "+REGION_LABEL[r];
   const s=regionSphere(r), d=distFor(s.radius);
@@ -554,8 +689,9 @@ function applyStates(){
   const rank={idle:0,found:1,active:2,red:3}; const best=new Map();
   for(const m of new Set(state.meshes.values())) best.set(m,"idle");
   for(const [id,st] of state.states){ for(const m of meshesOf(id)){ if(rank[st]>rank[best.get(m)]) best.set(m,st); } }
-  const MS=state.view==="normal"?MATN:MAT;
-  for(const [m,st] of best) m.material=MS[st];
+  const MS=state.view==="normal"?MATN:MAT, MM=state.view==="normal"?MATMN:MATM;
+  for(const [m,st] of best) m.material=m.userData.muscle?MM[st]:(D===DS.muscles&&st==="idle"&&state.view!=="normal"?MATB:MS[st]);
+  if(state.sel){ const g=state.view==="normal"?MATN.found:MAT.found; for(const m of state.sel) m.material=g; }
   // halo des os actifs
   state.glow.forEach(g=>{ g.parent&&g.parent.remove(g); }); state.glow=[];
   if(state.activeId){
@@ -590,16 +726,24 @@ function distFor(radius){
 function focusActive(instant){
   if(!state.ready||!state.activeId) return;
   const rs=regionSphere(state.region), bs=groupSphere(meshesOf(state.activeId));
+  /* option « Tout » : le corps entier reste visible, la caméra se centre sur l'élément à trouver */
+  if(state.fullMode){
+    /* on centre sur le côté droit (ou la partie médiane) pour les éléments pairs, même si les deux côtés s'allument */
+    const zs=state.regionSets[REGION_OF[state.activeId]];
+    const ms=(state.groups[state.activeId]||[]).filter(n=>!zs||zs.has(n)).map(n=>state.meshes.get(n)).filter(Boolean);
+    const zb=ms.length?groupSphere(ms):bs;
+    return flyTo(zb.center,Math.min(distFor(rs.radius),Math.max(0.45,distFor(zb.radius)*4)),instant);
+  }
   flyTo(rs.center,distFor(rs.radius)*(bs.radius<rs.radius*0.3?0.9:1),instant);
 }
 function overview(){ if(!state.region) return; const rs=regionSphere(state.region); flyTo(rs.center,distFor(rs.radius),false); }
 function setActive(id){
   state.activeId=id; for(const [k,v] of state.states) if(v==="active") state.states.set(k,"idle");
-  if(id){ state.states.set(id,"active"); setRegion(REGION_OF[id]); }
+  if(id){ state.states.set(id,"active"); const full=S&&S.kind==="train"&&S.mode==="tout"; setRegion(full?(D===DS.muscles?"full_mus":"full_os"):REGION_OF[id]); }
   applyStates(); if(state.auto) focusActive(false);
 }
 function setFound(id){ state.states.set(id,"found"); if(state.activeId===id) state.activeId=null; applyStates(); }
-function resetStates(){ state.states.clear(); state.activeId=null; state.fail=false; state.redId=null; stage.hidden=false; stage.classList.remove("fail"); applyStates(); }
+function resetStates(){ state.states.clear(); state.activeId=null; state.fail=false; state.redId=null; state.tipAll=false; state.sel=null; $("exSel").hidden=true; document.querySelector(".main").classList.remove("noside"); stage.hidden=false; stage.classList.remove("fail"); applyStates(); }
 
 let lastT=performance.now();
 function frame(now){
@@ -647,6 +791,88 @@ function setView(v){
 $("vXray").addEventListener("click",()=>setView("xray"));
 $("vNorm").addEventListener("click",()=>setView("normal"));
 setView(state.view);
+$("btnOpts").addEventListener("click",e=>{ const c=e.currentTarget.parentElement; const o=c.classList.toggle("open"); e.currentTarget.setAttribute("aria-expanded",o); });
+/* ===== Infobulle : nom, position et rôle au survol (souris) ou au toucher ===== */
+const meshItem={}, itemById={};
+function registerItems(ds){ for(const b of ds.items){ itemById[b.id]=b; for(const f of (state.groups[b.id]||[])){ meshItem[f]=b.id; meshItem["L_"+f]=b.id; } } }
+const raycaster=new THREE.Raycaster(), ndc=new THREE.Vector2(), tipEl=$("tip");
+function pickHit(cx,cy){
+  const r=canvas.getBoundingClientRect(); ndc.set(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1);
+  raycaster.setFromCamera(ndc,camera);
+  const cand=[]; for(const m of state.meshes.values()) if(m.visible) cand.push(m);
+  const hit=raycaster.intersectObjects(cand,false)[0];
+  const it=hit?itemById[meshItem[hit.object.name]]:null;
+  return it?{item:it,mesh:hit.object}:null;
+}
+function pickItem(cx,cy){ const h=pickHit(cx,cy); return h?h.item:null; }
+function pickItemOld(cx,cy){
+  const r=canvas.getBoundingClientRect(); ndc.set(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1);
+  raycaster.setFromCamera(ndc,camera);
+  const cand=[]; for(const m of state.meshes.values()) if(m.visible) cand.push(m);
+  const hit=raycaster.intersectObjects(cand,false)[0];
+  return hit?itemById[meshItem[hit.object.name]]:null;
+}
+/* ===== Sélection : clic sur un os ou un muscle -> vert + explication (squelette entier, pas de question) ===== */
+function sideOf(m){
+  if(m.userData.side===undefined){ const b=new THREE.Box3().setFromObject(m); const cx=(b.min.x+b.max.x)/2; m.userData.side=cx<-0.02?-1:cx>0.02?1:0; }
+  return m.userData.side;
+}
+function showExSel(it){
+  const E=$("exSel"); E.hidden=!state.tipAll; if(!state.tipAll) return;
+  if(!it){ E.innerHTML='<p class="hintline">Clique sur un os ou un muscle pour le voir en vert et lire son explication. Clique sur un autre pour changer, ou dans le vide pour désélectionner.</p>'; return; }
+  const role=it.fn||it.info||"";
+  E.innerHTML="<b>"+it.name+"</b><span class=\"tz\" style=\"display:block;color:var(--muted);font-size:.85rem;margin-bottom:4px\">"+(REGION_LABEL[it.region]||"")+"</span><p><b style=\"display:inline;color:var(--accent)\">Position :</b> "+it.clue+"</p>"+(role?"<p><b style=\"display:inline;color:var(--accent)\">Fonctionnement :</b> "+role+"</p>":"");
+}
+function selectAt(x,y){
+  const hit=pickHit(x,y);
+  if(!hit){ state.sel=null; applyStates(); showExSel(null); return; }
+  const it=hit.item, side=sideOf(hit.mesh);
+  const names=[...(state.groups[it.id]||[])]; names.push(...names.map(n=>"L_"+n));
+  const ms=names.map(n=>state.meshes.get(n)).filter(m=>m&&m.visible).filter(m=>{ const s=sideOf(m); return s===side||(side!==0&&s===0); });
+  state.sel=new Set(ms.length?ms:[hit.mesh]);
+  applyStates(); showExSel(it);
+}
+function tipAllowed(it){
+  if(!it) return false;
+  if(state.tipAll) return true;
+  if(S&&S.kind==="level") return false;     // épreuve : pas d'aide
+  return it.id!==state.activeId;             // jamais le nom de l'os ou du muscle à trouver
+}
+function hideTip(){ tipEl.hidden=true; tipEl.classList.remove("pinned"); }
+function showTip(it,x,y,pinned){
+  const role=it.fn||it.info||"";
+  tipEl.innerHTML="<b>"+it.name+"</b><span class=\"tz\">"+(REGION_LABEL[it.region]||"")+"</span><p><em>Position :</em> "+it.clue+"</p>"+(role?"<p><em>Fonctionnement :</em> "+role+"</p>":"");
+  tipEl.classList.toggle("pinned",!!pinned); tipEl.hidden=false;
+  const sr=stage.getBoundingClientRect(); let left=x-sr.left+14, top=y-sr.top+14; const w=tipEl.offsetWidth, hh=tipEl.offsetHeight;
+  if(left+w>sr.width-8) left=Math.max(8,x-sr.left-w-14);
+  if(top+hh>sr.height-8) top=Math.max(8,y-sr.top-hh-14);
+  tipEl.style.left=left+"px"; tipEl.style.top=top+"px";
+}
+let tipT=0, tipDown=null;
+canvas.addEventListener("pointermove",e=>{
+  if(e.pointerType!=="mouse") return;
+  if(e.buttons){ hideTip(); return; }
+  const now=performance.now(); if(now-tipT<60) return; tipT=now;
+  const it=pickItem(e.clientX,e.clientY); if(tipAllowed(it)) showTip(it,e.clientX,e.clientY); else hideTip();
+});
+canvas.addEventListener("pointerleave",hideTip);
+canvas.addEventListener("pointerdown",e=>{ tipDown={x:e.clientX,y:e.clientY,t:performance.now()}; if(e.pointerType==="mouse") hideTip(); });
+canvas.addEventListener("pointerup",e=>{
+  if(!tipDown) return;
+  const tap=Math.hypot(e.clientX-tipDown.x,e.clientY-tipDown.y)<6&&performance.now()-tipDown.t<500; tipDown=null;
+  if(!tap) return;
+  if(state.tipAll){ selectAt(e.clientX,e.clientY); hideTip(); return; }          // exploration : sélection au clic
+  if(e.pointerType==="mouse") return;
+  const it=pickItem(e.clientX,e.clientY); if(tipAllowed(it)) showTip(it,e.clientX,e.clientY,true); else hideTip();
+});
+/* fin de parcours : squelette complet, puis corps entier (muscles sur le squelette) */
+function showFullBody(kind){
+  const key=kind==="muscles"?"full_mus":"full_os";
+  if(!state.regionSets[key]) return;
+  resetStates();
+  REGION_LABEL[key]=kind==="muscles"?"Corps humain complet : muscles sur le squelette":"Squelette humain complet (206 os)";
+  state.region=null; setRegion(key); state.tipAll=true; applyStates(); hideTip(); showExSel(null);
+}
 function syncSlide(){ $("btnSlide").setAttribute("aria-pressed",state.slide); }
 $("btnSlide").addEventListener("click",()=>{ state.slide=!state.slide; syncSlide(); });
 syncSlide();
@@ -670,7 +896,7 @@ function randomOrder(list){
   if(q.length>1 && q[0].id===lastFirst){ const j=1+rnd(q.length-1); [q[0],q[j]]=[q[j],q[0]]; }
   lastFirst=q[0].id; return q;
 }
-function bonesFor(mode){ return mode==="tout" ? BONES.slice() : BONES.filter(b=>b.view.includes(mode)); }
+function bonesFor(mode,ds){ return (ds||D).bonesFor(mode); }
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 /* clavier AZERTY */
@@ -703,21 +929,38 @@ document.addEventListener("keydown",e=>{
   }
 });
 
-function countLabels(){ document.querySelectorAll(".mode").forEach(b=>{ b.querySelector("small").textContent=bonesFor(b.dataset.mode).length; }); }
+function countLabels(){
+  document.querySelectorAll("#modesTrain .mode").forEach(b=>{ b.querySelector("small").textContent=bonesFor(b.dataset.mode,DS.os).length; });
+  document.querySelectorAll("#modesTrainM .mode").forEach(b=>{ b.querySelector("small").textContent=DS.muscles.items.length?bonesFor(b.dataset.mode,DS.muscles).length:""; });
+}
 
-const foundBy={squelette:new Set(),crane:new Set(),main:new Set(),pied:new Set(),tout:new Set()};
-const MODE_LABEL={squelette:"Squelette",crane:"Crâne",main:"Main",pied:"Pied",tout:"Tout"};
-function resetCanvasSlide(){ canvas.style.transition="none"; canvas.style.transform=""; canvas.style.opacity=""; }
-const LSTORE="quiz-os-niveau";
-function getDone(){ try{ return Math.min(5,Math.max(0,parseInt(localStorage.getItem(LSTORE)||"0",10)||0)); }catch(e){ return 0; } }
-function setDone(n){ try{ if(n>getDone()) localStorage.setItem(LSTORE,String(n)); }catch(e){} }
+let foundBy=DS.os.foundBy;
+let MODE_LABEL=DS.os.modes;
+function setRows(kind){ $("modesTrain").hidden=!(D===DS.os&&kind==="train"); $("modesTrainM").hidden=!(D===DS.muscles&&kind==="train"); $("modesLevel").hidden=(kind!=="level"); }
+function resetCanvasSlide(){ canvas.classList.remove("arrow"); canvas.style.transition="none"; canvas.style.transform=""; canvas.style.opacity=""; }
+function doneOf(k){ try{ return Math.min(5,Math.max(0,parseInt(localStorage.getItem(k)||"0",10)||0)); }catch(e){ return 0; } }
+function getDone(){ return doneOf(D.key); }
+function setDone(n){ try{ if(n>getDone()) localStorage.setItem(D.key,String(n)); }catch(e){} }
+const musclesUnlocked=()=>doneOf(DS.os.key)>=5;
 function nextLevel(){ return Math.min(5,getDone()+1); }
+function startExplore(){
+  resetCanvasSlide(); resetStates();
+  S={kind:"explore",mode:"tout",queue:[],i:0,results:[],hist:[],hints:0,errors:0,locked:true};
+  setRows("train");
+  document.querySelectorAll(".mode").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode==="tout"));
+  $("play").hidden=true; $("end").hidden=true; $("end").className="end"; $("explain").hidden=true;
+  showFullBody(D===DS.muscles?"muscles":"os");
+  document.querySelector(".main").classList.add("noside");
+  canvas.classList.add("arrow");
+  S.locked=true;
+}
 function start(mode,list){
+  if(mode==="tout"&&!list) return startExplore();
   const prevHist=(list&&S.mode===mode&&S.hist)?S.hist:[];
   resetCanvasSlide();
   if(!list) foundBy[mode]=new Set();
   S={kind:"train",mode,queue:randomOrder(list||bonesFor(mode)),i:0,results:[],hist:prevHist,hints:0,errors:0,locked:false};
-  $("modesTrain").hidden=false; $("modesLevel").hidden=true;
+  setRows("train");
   document.querySelectorAll(".mode").forEach(b=>b.setAttribute("aria-pressed", b.dataset.mode===mode));
   resetStates();
   $("play").hidden=false; $("end").hidden=true; $("end").className="end";
@@ -726,15 +969,14 @@ function start(mode,list){
 
 function renderLevelButtons(){
   const done=getDone();
-  $("modesLevel").innerHTML=LEVELS.map(L=>{ const ok=L.n<=done+1; return `<button class="lvlbtn" data-level="${L.n}" aria-pressed="false" ${ok?"":"disabled"} title="${ok?L.desc:"Réussis le niveau précédent sans aide ni erreur pour le débloquer"}">${L.nom}${L.n<=done?" ✓":ok?"":" 🔒"}<small>${levelBones(L.n).length}</small></button>`; }).join("")+'<button class="lvlbtn alt" id="goTrain" type="button">Entraînement libre</button><button class="lvlbtn alt" id="goMuscles" type="button" '+(done>=5?"":"disabled")+'>Muscles '+(done>=5?"🔓":"🔒")+'</button>';
+  $("modesLevel").innerHTML=LEVELS.map(L=>{ const ok=L.n<=done+1; return `<button class="lvlbtn" data-level="${L.n}" aria-pressed="false" ${ok?"":"disabled"} title="${ok?L.desc:"Réussis le niveau précédent sans aide ni erreur pour le débloquer"}">${L.nom}${L.n<=done?" ✓":ok?"":" 🔒"}<small>${levelBones(L.n).length}</small></button>`; }).join("")+'<button class="lvlbtn alt" id="goTrain" type="button">Entraînement libre</button>';
   $("modesLevel").querySelectorAll("[data-level]").forEach(b=>b.addEventListener("click",()=>startLevel(+b.dataset.level)));
   $("goTrain").addEventListener("click",()=>start("tout"));
-  $("goMuscles").addEventListener("click",showMuscles);
 }
 function startLevel(n){
   resetCanvasSlide(); resetStates(); renderLevelButtons();
   S={kind:"level",level:n,mode:"niveau"+n,queue:randomOrder(levelBones(n)),i:0,results:[],hist:[],hints:0,errors:0,locked:false};
-  $("modesTrain").hidden=true; $("modesLevel").hidden=false;
+  setRows("level");
   $("modesLevel").querySelectorAll("[data-level]").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.level===n));
   $("play").hidden=false; $("end").hidden=true; $("end").className="end";
   updateSide(); show();
@@ -754,7 +996,8 @@ function showFail(reason,b){
   $("play").hidden=true; const E=$("end"); E.hidden=false;
   E.innerHTML=`<h2>Niveau ${S.level} à recommencer</h2>
     <p style="color:var(--bad);font-size:1.1rem">${reason}</p>
-    <p>Réponse attendue : <b>${b.name}</b>. Tu avais trouvé ${S.hist.length} os sur ${S.queue.length} sans faute.</p>
+    <p>Réponse attendue : <b>${b.name}</b>. Tu avais trouvé ${S.hist.length} ${D.pl} sur ${S.queue.length} sans faute.</p>
+    ${b.fn?`<p class="explain-in"><b>Fonctionnement :</b> ${b.fn}</p>`:""}
     <p style="color:var(--muted)">Pour valider un niveau, il faut tout trouver du premier coup, sans aide ni erreur. L’ordre sera tiré au hasard de nouveau.</p>
     <div class="tools"><button class="btn btn-main" id="retry" type="button">Recommencer le niveau ${S.level}</button><button class="btn" id="toTrain" type="button">M’entraîner librement</button></div>`;
   const lv=S.level; $("retry").onclick=()=>startLevel(lv); $("toTrain").onclick=()=>start("tout"); $("retry").focus();
@@ -824,23 +1067,107 @@ function boneText(word){
   return `<svg viewBox="-0.5 -6 ${(W+1).toFixed(1)} 16" role="img" aria-label="${word}" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 1.5px 2px rgba(0,0,0,.55))">
     <defs><radialGradient id="bk" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#FFFEF6"/><stop offset="0.55" stop-color="#EBDFC3"/><stop offset="1" stop-color="#B9A882"/></radialGradient></defs>${g}</svg>`;
 }
+function setDsButtons(){
+  const ok=musclesUnlocked();
+  $("dsOs").setAttribute("aria-pressed",D===DS.os); $("dsMus").setAttribute("aria-pressed",D===DS.muscles);
+  $("dsMus").disabled=!ok; $("dsMus").textContent=ok?"Muscles":"Muscles 🔒";
+  $("sideTitle").textContent=D.Pl+" trouvés";
+}
 function refreshMuscleCard(){
-  const ok=getDone()>=5, b=$("lcMuscles");
+  const ok=musclesUnlocked(), b=$("lcMuscles");
   b.disabled=!ok;
   $("lcMusclesT").textContent= ok ? "Parcours des muscles 🔓" : "Parcours des muscles 🔒";
-  $("lcMusclesD").textContent= ok ? "Débloqué ! 5 niveaux de muscles, bientôt disponibles." : "Termine les 5 niveaux des os pour y accéder.";
+  $("lcMusclesD").textContent= ok ? "Débloqué ! 5 niveaux de muscles, chacun expliqué." : "Termine les 5 niveaux des os pour y accéder.";
+  setDsButtons();
 }
-function showMuscles(){
-  if(getDone()<5) return;
+let mdataP=null; const loadMData=()=>mdataP||(mdataP=import("./assets/muscles_data.js").catch(e=>{ mdataP=null; throw e; }));
+let musclesP=null;
+function ensureMuscles(){
+  if(musclesP) return musclesP;
+  musclesP=(async()=>{
+    const [mod,groups,zones]=await Promise.all([loadMData(),fetch("assets/muscles.json").then(r=>r.json()),fetch("assets/muscle_zones.json").then(r=>r.json())]);
+    await modelP; if(!modelOk) throw new Error("modèle des os indisponible");
+    const items=mod.MUSCLES; items.forEach(b=>{ b.view=[b.view]; b.region="z_"+b.zone; REGION_OF[b.id]=b.region; }); prepItems(items);
+    DS.muscles.items=items;
+    Object.assign(state.groups,groups);
+    for(const [k,v] of Object.entries(zones)){ state.regionSets[k]=new Set(v.ids); REGION_LABEL[k]=v.label; }
+    const loader=new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+    const gltf=await new Promise((res,rej)=>loader.load("assets/muscles.glb",res,e=>{ if(e.lengthComputable) $("mLoad").textContent="Chargement des muscles… "+Math.round(e.loaded/e.total*100)+" %"; },rej));
+    gltf.scene.traverse(o=>{ if(o.isMesh){ o.material=MATM.idle; o.frustumCulled=false; o.visible=false; o.userData.muscle=true; state.meshes.set(o.name,o); } });
+    scene.add(gltf.scene); scene.updateMatrixWorld(true);
+    /* côté gauche des membres : image en miroir du côté droit (aucun fichier en plus) */
+    const mirror=new THREE.Group(); mirror.scale.x=-1; scene.add(mirror);
+    for(const z of ["z_bras","z_avantbras","z_cuisse","z_jambe"]) for(const id of zones[z].ids){
+      const m=state.meshes.get(id);
+      if(m&&m.userData.muscle&&!state.meshes.has("L_"+id)){ const c=new THREE.Mesh(m.geometry,m.material); c.name="L_"+id; c.position.copy(m.position); c.quaternion.copy(m.quaternion); c.scale.copy(m.scale); c.frustumCulled=false; c.visible=false; c.userData.muscle=true; mirror.add(c); state.meshes.set(c.name,c); }
+    }
+    scene.updateMatrixWorld(true);
+    state.regionSets.full_mus=new Set(state.meshes.keys());
+    registerItems(DS.muscles);
+    countLabels();
+  })();
+  musclesP.catch(()=>{ musclesP=null; });
+  return musclesP;
+}
+async function showMuscles(){
+  if(!musclesUnlocked()) return;
   $("launch").hidden=true; $("app").hidden=true; $("muscles").hidden=false;
-  $("mlv").innerHTML=LEVELS.map(L=>`<li><span><b>Niveau ${L.n}</b> · muscles ${["les plus faciles","+ moyens","+ difficiles","+ très difficiles","tous"][L.n-1]}</span><span>bientôt disponible</span></li>`).join("");
   $("musclesTitle").focus(); window.scrollTo(0,0);
+  try{
+    const mod=await loadMData(), t=n=>mod.MUSCLES.filter(x=>x.tier<=n).length, done=doneOf(DS.muscles.key);
+    $("mCount").textContent=mod.MUSCLES.length+" muscles";
+    $("mcLevelsT").textContent= done>=5 ? "Parcours par niveaux (terminé)" : done>0 ? "Continuer au niveau "+Math.min(5,done+1) : "Commencer par le niveau 1";
+    $("mcLevelsD").textContent= done>0 ? "Niveaux déjà validés : "+done+" sur 5. Chaque niveau se réussit sans aide ni erreur." : t(1)+" muscles parmi les plus faciles. À réussir sans aide ni erreur pour débloquer le niveau suivant.";
+    $("mlv").innerHTML=LEVELS.map(L=>"<li><b>"+L.nom+"</b> · "+L.desc.replace("os","muscles")+" ("+t(L.n)+" muscles)</li>").join("");
+  }catch(e){ console.error(e); $("mLoad").textContent="Impossible de charger les muscles. Vérifie ta connexion puis recharge la page."; }
 }
 function backFromMuscles(){
   $("muscles").hidden=true;
   if(S&&S.kind){ $("app").hidden=false; resize(); } else $("launch").hidden=false;
 }
+async function enterMuscles(kind){
+  if(!musclesUnlocked()) return;
+  $("mLoad").textContent="Chargement des muscles…";
+  try{ await ensureMuscles(); }catch(e){ console.error(e); $("mLoad").textContent="Impossible de charger les muscles. Vérifie ta connexion puis réessaie."; return; }
+  $("mLoad").textContent="";
+  D=DS.muscles; foundBy=D.foundBy; MODE_LABEL=D.modes;
+  $("muscles").hidden=true; $("launch").hidden=true; $("app").hidden=false; resize();
+  $("play").hidden=false; setDsButtons(); countLabels();
+  if(kind==="level") startLevel(nextLevel()); else start("tout");
+}
+async function switchDataset(name){
+  if(name==="muscles"){
+    if(!musclesUnlocked()) return;
+    $("dsMus").textContent="Chargement…";
+    try{ await ensureMuscles(); }catch(e){ console.error(e); alert("Impossible de charger les muscles. Vérifie ta connexion puis réessaie."); setDsButtons(); return; }
+  }
+  const kind=(S&&S.kind==="level")?"level":"train";
+  D=DS[name]; foundBy=D.foundBy; MODE_LABEL=D.modes; setDsButtons(); countLabels();
+  if(kind==="level") startLevel(nextLevel()); else start("tout");
+}
+/* fin d'un niveau de muscles */
+function winLevelM(){
+  const n=S.level; setDone(n); renderLevelButtons();
+  $("modesLevel").querySelectorAll("[data-level]").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.level===n));
+  state.activeId=null; applyStates(); $("explain").hidden=true;
+  $("play").hidden=true; const E=$("end"); E.hidden=false;
+  if(n<5){
+    E.className="end";
+    E.innerHTML=`<h2>Niveau ${n} réussi !</h2><p class="big">${S.queue.length} / ${S.queue.length}</p><p>Sans aide ni erreur. Le niveau ${n+1} est débloqué (${levelBones(n+1).length} muscles).</p>
+      <div class="tools"><button class="btn btn-main" id="nextLvl" type="button">Passer au niveau ${n+1}</button><button class="btn" id="again" type="button">Rejouer le niveau ${n}</button></div>`;
+    $("nextLvl").onclick=()=>startLevel(n+1); $("again").onclick=()=>startLevel(n); $("nextLvl").focus();
+  }else{
+    E.className="end jedi"; showFullBody("muscles");
+    E.innerHTML=`<h2>Maître Jedi ! Tu connais les os et les muscles du corps humain.</h2>
+      <p class="yoda">Que la Force soit avec toi, jeune Jedi.</p>
+      <p>Voici le corps entier : clique sur un muscle ou un os pour le voir en vert et lire son nom, sa position et son fonctionnement.</p>
+      <div class="bonetext">${boneText("FÉLICITATIONS")}</div>
+      <div class="tools"><button class="btn btn-main" id="again" type="button">Rejouer le niveau 5</button><button class="btn" id="toTrain" type="button">M’entraîner librement</button><button class="btn" id="toOs" type="button">Retour aux os</button></div>`;
+    $("again").onclick=()=>startLevel(5); $("toTrain").onclick=()=>start("tout"); $("toOs").onclick=()=>switchDataset("os"); $("again").focus();
+  }
+}
 function winLevel(){
+  if(D===DS.muscles) return winLevelM();
   const n=S.level; setDone(n); renderLevelButtons();
   $("modesLevel").querySelectorAll("[data-level]").forEach(b=>b.setAttribute("aria-pressed",+b.dataset.level===n));
   state.activeId=null; applyStates();
@@ -851,9 +1178,9 @@ function winLevel(){
    : `<div class="jedi-wrap"><h2>Bien joué jeune padawan, tu maîtrises l’anatomie des os !</h2>
       <p class="yoda">Mais pour devenir un Jedi tu devras muscle connaître</p>
       <div class="bonetext">${boneText("FÉLICITATIONS")}</div>
-      <p>Accès débloqué : les 5 niveaux des muscles du corps humain.</p>
+      <p>Voici le squelette complet : clique sur un os pour le voir en vert et lire son nom et son rôle. Accès débloqué : les 5 niveaux des muscles du corps humain.</p>
       <div class="tools"><button class="btn btn-main" id="toMuscles" type="button">Découvrir les muscles</button><button class="btn" id="again" type="button">Rejouer le niveau 5</button><button class="btn" id="toTrain" type="button">M’entraîner librement</button></div></div>`;
-  E.className=n===5?"end jedi":"end"; stage.hidden=(n===5); refreshMuscleCard(); renderLevelButtons();
+  E.className=n===5?"end jedi":"end"; if(n===5) showFullBody("os"); refreshMuscleCard(); renderLevelButtons();
   const tm=$("toMuscles"); if(tm) tm.onclick=showMuscles;
   const nl=$("nextLvl"); if(nl) nl.onclick=()=>startLevel(n+1);
   $("again").onclick=()=>startLevel(n); const tt=$("toTrain"); if(tt) tt.onclick=()=>start("tout");
@@ -861,10 +1188,10 @@ function winLevel(){
 }
 function show(){
   const b=S.queue[S.i];
-  S.hints=0; S.errors=0; S.locked=false;
+  S.hints=0; S.errors=0; S.locked=false; S.waitNext=false; $("explain").hidden=true; hideTip();
   setActive(b.id);
-  canvas.setAttribute("aria-label",`${REGION_LABEL[b.region]} en 3D. Un os est mis en évidence : ${b.clue}`);
-  $("count").textContent=`${S.kind==="level"?"Niveau "+S.level+" · ":""}Os ${S.i+1} / ${S.queue.length}`;
+  canvas.setAttribute("aria-label",`${REGION_LABEL[b.region]} en 3D. Un ${D.one} est mis en évidence : ${b.clue}`);
+  $("count").textContent=`${S.kind==="level"?"Niveau "+S.level+" · ":""}${D.One} ${S.i+1} / ${S.queue.length}`;
   $("clue").textContent=b.clue;
   $("hint").textContent=""; fb("","");
   inp.value=""; inp.readOnly=false;
@@ -883,15 +1210,15 @@ function wrongAnswer(kind,html){
 }
 function check(e){
   e && e.preventDefault();
-  if(S.locked) return;
+  if(S.locked){ if(S.waitNext) goNext(); return; }
   const b=S.queue[S.i], v=norm(inp.value);
-  if(!v){ shake(); fb("info","Tape le nom de l’os, puis Entrée."); return; }
+  if(!v){ shake(); fb("info","Tape le nom "+(D===DS.os?"de l’os":"du muscle")+", puis Entrée."); return; }
   if(b.nAns.includes(v) || v===b.nName) return success(b);
   S.errors++;
   if(b.nOld.includes(v)) return wrongAnswer("warn",`C’est l’ancien nom. Aujourd’hui on dit <b>${b.name}</b>. Tape-le pour continuer.`);
   if(b.notes && b.notes[v]) return wrongAnswer("warn",b.notes[v]);
-  const other=BONES.find(o=>o.id!==b.id && o.name!==b.name && (o.nAns.includes(v)||o.nOld.includes(v)));
-  if(other) return wrongAnswer("bad",`Non : « ${other.name} » est un autre os. Relis l’indice.`);
+  const other=D.items.find(o=>o.id!==b.id && o.name!==b.name && (o.nAns.includes(v)||o.nOld.includes(v)));
+  if(other) return wrongAnswer("bad",`Non : « ${other.name} » est un autre ${D.one}. Relis l’indice.`);
   if(b.nAns.concat([b.nName]).some(a=>v.length>=4 && lev(v,a)<=2)) return wrongAnswer("warn","Presque ! Vérifie l’orthographe.");
   return wrongAnswer("bad", S.errors>=3 ? "Toujours pas. Essaie « Afficher une lettre »." : "Ce n’est pas ça. Réessaie.");
 }
@@ -904,7 +1231,9 @@ function success(b){
   fb("ok",`Bravo : <b>${b.name}</b>${b.old&&b.old.length?` (anciennement ${b.old[0]})`:""}.`);
   if(foundBy[S.mode]) foundBy[S.mode].add(b.id);
   if(!S.hist.some(x=>x.b.id===b.id)) S.hist.unshift({b,t:(S.hints||S.errors)?"aide":"ok"});
-  updateStats(); updateSide(); const run=S; setTimeout(()=>{ if(S===run) next(); },1000);
+  updateStats(); updateSide();
+  if(b.fn){ showExplain(b); return; }
+  const run=S; setTimeout(()=>{ if(S===run) next(); },1000);
 }
 
 function hint(){
@@ -927,9 +1256,20 @@ function reveal(){
   fb("info",`Réponse : <b>${b.name}</b>${b.old&&b.old.length?` (anciennement ${b.old[0]})`:""}.`);
   $("btnHint").disabled=true; $("btnPass").disabled=true;
   state.activeId=null; for(const [k,v] of state.states) if(v==="active") state.states.set(k,"idle"); applyStates();
-  updateStats(); const run=S; setTimeout(()=>{ if(S===run) next(); },2200);
+  updateStats();
+  if(b.fn){ showExplain(b); return; }
+  const run=S; setTimeout(()=>{ if(S===run) next(); },2200);
 }
 
+/* muscle trouvé ou présenté : on explique son fonctionnement, puis on passe au suivant à la demande */
+function showExplain(b){
+  const E=$("explain"); E.hidden=false;
+  E.innerHTML="<b>Fonctionnement : "+b.name+"</b><p>"+b.fn+"</p><button class=\"btn btn-main\" id=\"btnNext\" type=\"button\">"+(S.i+1>=S.queue.length?"Terminer":"Muscle suivant")+"</button>";
+  S.waitNext=true; $("btnNext").onclick=goNext;
+  $("btnHint").disabled=true; $("btnPass").disabled=true;
+  E.scrollIntoView({block:"nearest"}); $("btnNext").focus({preventScroll:true});
+}
+function goNext(){ if(!S.waitNext) return; S.waitNext=false; $("explain").hidden=true; next(); }
 function next(){
   S.i++; if(S.i>=S.queue.length) return end();
   slideSwap(()=>show());
@@ -948,7 +1288,7 @@ function slideSwap(fn){
 }
 /* panneau latéral : progression + historique */
 function updateSide(){
-  const lvl=S.kind==="level", done=getDone();
+  const lvl=S.kind==="level", done=getDone(); $("sideTitle").textContent=D.Pl+" trouvés";
   const total=lvl?S.queue.length:bonesFor(S.mode).length, n=lvl?S.hist.length:foundBy[S.mode].size;
   $("progN").textContent=n; $("progT").textContent=total; $("progBar").style.width=(total?n/total*100:0)+"%";
   $("counters").innerHTML=lvl ? LEVELS.map(L=>`<li class="${L.n===S.level?"cur":""}">${L.nom}<b>${L.n<=done?"validé ✓":L.n===done+1?"à valider":"verrouillé"}</b></li>`).join("") : Object.keys(MODE_LABEL).map(m=>`<li class="${m===S.mode?"cur":""}">${MODE_LABEL[m]}<b>${foundBy[m].size} / ${bonesFor(m).length}</b></li>`).join("");
@@ -960,13 +1300,13 @@ function end(){
   if(S.kind==="level") return winLevel();
   state.activeId=null; applyStates(); if(state.auto) overview();
   const n=S.queue.length, ok=S.results.filter(r=>r.t==="ok").length, pct=Math.round(ok/n*100);
-  const record=setBest(S.mode,pct), best=getBest()[S.mode];
+  const bk=(D===DS.muscles?"m_":"")+S.mode, record=setBest(bk,pct), best=getBest()[bk];
   const rev=S.results.filter(r=>r.t!=="ok");
   $("play").hidden=true; const E=$("end"); E.hidden=false;
   E.innerHTML=`<h2>Série terminée</h2><p class="big">${ok} / ${n}</p>
     <p style="color:var(--muted);margin-top:6px">trouvés du premier coup${record?", nouveau record !":best!=null?` (record : ${best} %)`:""}</p>
     ${rev.length?`<ul class="review">${rev.map(r=>`<li><span>${r.b.name}${r.b.old&&r.b.old.length?` <span style="color:var(--muted)">(anc. ${r.b.old[0]})</span>`:""}</span><span class="tag ${r.t==="aide"?"h":"p"}">${r.t==="aide"?"avec aide":"révélé"}</span></li>`).join("")}</ul>`:`<p>Sans faute. Essaie une autre série.</p>`}
-    <div class="tools">${rev.length?`<button class="btn btn-main" id="againErr" type="button">Revoir ces ${rev.length} os</button>`:""}<button class="btn ${rev.length?"":"btn-main"}" id="again" type="button">Rejouer la série</button></div>`;
+    <div class="tools">${rev.length?`<button class="btn btn-main" id="againErr" type="button">Revoir ces ${rev.length} ${D.pl}</button>`:""}<button class="btn ${rev.length?"":"btn-main"}" id="again" type="button">Rejouer la série</button></div>`;
   const a=$("againErr"); if(a) a.onclick=()=>start(S.mode,rev.map(r=>r.b));
   $("again").onclick=()=>start(S.mode);
   (a||$("again")).focus();
@@ -1003,6 +1343,11 @@ async function begin(kind){
   $("lcTrain").addEventListener("click",()=>begin("train"));
   $("goLevels").addEventListener("click",()=>startLevel(nextLevel()));
   $("lcMuscles").addEventListener("click",showMuscles);
+  $("mcLevels").addEventListener("click",()=>enterMuscles("level"));
+  $("mcTrain").addEventListener("click",()=>enterMuscles("train"));
+  $("goLevelsM").addEventListener("click",()=>startLevel(nextLevel()));
+  $("dsOs").addEventListener("click",()=>{ if(D!==DS.os) switchDataset("os"); });
+  $("dsMus").addEventListener("click",()=>{ if(D!==DS.muscles) switchDataset("muscles"); });
   $("backBones").addEventListener("click",backFromMuscles);
   refreshMuscleCard();
   renderLevelButtons();
